@@ -1,0 +1,192 @@
+============================================================================
+  SUPPLIER SEARCH ENGINE - COMMAND CHEAT SHEET
+============================================================================
+
+PROJECT LOCATION:
+  C:\Users\n0l08i7\Documents\supplier-search-engine
+
+============================================================================
+  INITIALIZATION
+============================================================================
+
+Create fresh database:
+  python init_db.py
+
+Load sample data (5 suppliers, 10 products):
+  python sample_data.py
+
+Verify database schema and stats:
+  python verify_schema.py
+
+============================================================================
+  SUPPLIER OPERATIONS
+============================================================================
+
+Add a new supplier:
+  python cli.py add-supplier --supplier-id "NEWSUP001" --name "New Corp" --category "Electronics" --city "San Jose" --state "CA"
+
+Search for suppliers (by name, ID, or keyword):
+  python cli.py search --query "ACME"
+  python cli.py search --query "Electronics" --category "Electronics"
+  python cli.py search --query "Manufacturing"
+
+View dashboard statistics:
+  python cli.py stats
+
+============================================================================
+  PRODUCT OPERATIONS
+============================================================================
+
+Add a product to supplier:
+  python cli.py add-product --supplier-id 1 --product-code "PROD001" --product-name "Laptop" --unit-cost 1299.99 --lead-time-days 5 --min-order-qty 10
+
+List all products from a supplier:
+  python cli.py list-products --supplier-id 1
+
+============================================================================
+  SAMPLE DATA
+============================================================================
+
+Pre-loaded suppliers (with sample_data.py):
+  1. ACME Electronics Corp (ID: ACME001, Category: Electronics)
+  2. ChemCorp Solutions (ID: CHEM001, Category: Chemicals)
+  3. MechTech Manufacturing (ID: MECH001, Category: Manufacturing)
+  4. SoftWare Solutions Inc (ID: SOFT001, Category: Software)
+  5. PackageMasters Ltd (ID: PACK001, Category: Packaging)
+
+Example search commands with sample data:
+  python cli.py search --query "Corp"
+  python cli.py search --query "Electronics"
+  python cli.py search --query "Manufacturing"
+  python cli.py list-products --supplier-id 1
+  python cli.py list-products --supplier-id 2
+  python cli.py stats
+
+============================================================================
+  DETAILED COMMAND SYNTAX
+============================================================================
+
+add-supplier arguments:
+  --supplier-id [REQUIRED]     Unique supplier identifier (e.g., SUP001)
+  --name [REQUIRED]            Supplier company name
+  --email [OPTIONAL]           Email address
+  --phone [OPTIONAL]           Phone number
+  --address [OPTIONAL]         Street address
+  --city [OPTIONAL]            City
+  --state [OPTIONAL]           State/Province
+  --zip-code [OPTIONAL]        Postal code
+  --country [OPTIONAL]         Country (default: USA)
+  --category [OPTIONAL]        Product category (default: General)
+  --status [OPTIONAL]          Status: active|inactive|pending (default: active)
+
+search arguments:
+  --query or -q [REQUIRED]     Search term (name, ID, or keyword)
+  --category or -c [OPTIONAL]  Filter results by category
+
+add-product arguments:
+  --supplier-id [REQUIRED]     Supplier ID (numeric)
+  --product-code [REQUIRED]    Unique product code
+  --product-name [REQUIRED]    Human-readable product name
+  --description [OPTIONAL]     Product description
+  --unit-cost [OPTIONAL]       Price per unit (default: 0.0)
+  --lead-time-days [OPTIONAL]  Delivery lead time (default: 0)
+  --min-order-qty [OPTIONAL]   Minimum order quantity (default: 1)
+
+list-products arguments:
+  --supplier-id [REQUIRED]     Supplier ID (numeric)
+
+stats arguments:
+  (none - just run the command)
+
+============================================================================
+  DATABASE FILES
+============================================================================
+
+suppliers.db              44 KB SQLite database file
+
+Tables:
+  - suppliers (5 rows with sample data)
+  - products (10 rows with sample data)
+  - search_history (search logs)
+
+Indexes:
+  - idx_supplier_name (fast name searches)
+  - idx_supplier_category (fast category filtering)
+  - idx_product_supplier (fast product lookups)
+  - idx_search_history_date (fast analytics)
+
+============================================================================
+  PYTHON USAGE
+============================================================================
+
+Import and use directly:
+
+  from database import SupplierDatabase
+  
+  db = SupplierDatabase()
+  
+  # Search
+  results = db.search_suppliers('ACME')
+  
+  # Add supplier
+  supplier_id = db.add_supplier({
+      'supplier_id': 'SUP001',
+      'name': 'My Supplier',
+      'category': 'Electronics'
+  })
+  
+  # Get statistics
+  stats = db.get_statistics()
+  print(f"Total suppliers: {stats['total_active_suppliers']}")
+
+============================================================================
+  HELP
+============================================================================
+
+View all available commands:
+  python cli.py --help
+
+View help for specific command:
+  python cli.py add-supplier --help
+  python cli.py search --help
+  python cli.py add-product --help
+
+============================================================================
+  QUICK TESTS
+============================================================================
+
+After running sample_data.py, try these tests:
+
+1. Search test:
+   python cli.py search --query "Corp"
+   (Should find 2 suppliers)
+
+2. Category filter test:
+   python cli.py search --query "Electronics" --category "Electronics"
+   (Should find ACME Electronics Corp)
+
+3. Products test:
+   python cli.py list-products --supplier-id 1
+   (Should show 2 products from ACME)
+
+4. Statistics test:
+   python cli.py stats
+   (Should show 5 suppliers, 10 products, 5 categories)
+
+============================================================================
+  TROUBLESHOOTING
+============================================================================
+
+Error: "suppliers.db does not exist"
+  Solution: python init_db.py
+
+Error: "UNIQUE constraint failed: suppliers.supplier_id"
+  Solution: supplier_id already exists, use a different ID
+
+Error: "Foreign key constraint failed"
+  Solution: supplier_id doesn't exist, add supplier first
+
+Error: "No suppliers found matching..."
+  Solution: Database is empty, run: python sample_data.py
+
+============================================================================
