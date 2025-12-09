@@ -1,0 +1,148 @@
+================================================================================
+COPY & PASTE THESE COMMANDS
+================================================================================
+
+Just copy and paste these commands. Don't type them manually.
+
+
+[1] OPEN POWERSHELL
+================================================================================
+
+Press: Windows Key + R
+Type: powershell
+Press: Enter
+
+
+[2] NAVIGATE TO PROJECT FOLDER
+================================================================================
+
+Copy this and paste into PowerShell:
+
+cd "C:\Users\n0l08i7\Desktop\New folder\supplier-hub"
+
+
+[3] START THE SERVER
+================================================================================
+
+Copy this and paste into PowerShell:
+
+python -m uvicorn app:app --host 0.0.0.0 --port 8000
+
+
+Wait for this message:
+  INFO:     Uvicorn running on http://0.0.0.0:8000
+
+When you see it, the server is running! ✅
+
+
+[4] OPEN BROWSER
+================================================================================
+
+Open a new browser tab and go to:
+
+http://localhost:8000
+
+
+[5] TEST LOGIN
+================================================================================
+
+Enter these values:
+
+Email Address: test@example.com
+Full Name: Test User
+Walmart ID: (leave blank)
+
+Click: Login
+
+Expected: You'll see the dashboard! 🎉
+
+
+[6] IF LOGIN FAILS
+================================================================================
+
+Press F12 in browser to see error message.
+
+If you see error, copy that error message and:
+1. Check HOW_TO_START_SERVER.md
+2. Check LOGIN_TROUBLESHOOTING.md
+3. Run this command in PowerShell:
+   python diagnose.py
+
+
+[7] TO STOP SERVER
+================================================================================
+
+In the PowerShell window where server is running:
+
+Press: CTRL+C
+
+Server will stop.
+
+
+[8] OPTIONAL: IMPORT SUPPLIERS
+================================================================================
+
+If login works, create suppliers.csv with this content:
+
+id,name,category,location,region,rating,aiScore,products,certifications,walmartVerified,yearsInBusiness,projectsCompleted
+1,Premier Steel,Steel & Metal,Chicago IL,Midwest,4.8,85,Steel Beams;Rebar,ISO 9001,True,25,1200
+2,Hardware Pro,Hardware & Fasteners,Dallas TX,Southwest,4.5,80,Nails;Screws,UL Listed,True,15,800
+
+Then upload via dashboard upload button or use:
+
+curl -X POST -F "file=@suppliers.csv" http://localhost:8000/api/suppliers/import
+
+
+[9] OPTIONAL: ADD CATEGORIES MODAL
+================================================================================
+
+If you want a nice dropdown for categories:
+
+1. Open: CATEGORIES_MODAL.html (in your editor)
+2. Copy the <script> block (all the JavaScript)
+3. Open: index.html
+4. Go to the very end, before </body>
+5. Paste the script
+6. Find "Categories" button (search for "filterByStat('categories')")
+7. Change to: onclick="showCategoriesModal()"
+8. Save
+9. Reload browser
+
+Done! ✅
+
+
+[SUMMARY]
+================================================================================
+
+1. cd "C:\Users\n0l08i7\Desktop\New folder\supplier-hub"
+2. python -m uvicorn app:app --host 0.0.0.0 --port 8000
+3. Go to http://localhost:8000
+4. Login with test@example.com / Test User
+
+That's it! 🚀
+
+
+[IMPORTANT]
+================================================================================
+
+DO NOT use --reload flag
+
+DO NOT type: python -m uvicorn app:app --reload ...
+
+JUST use: python -m uvicorn app:app --host 0.0.0.0 --port 8000
+
+
+[HELP]
+================================================================================
+
+If something goes wrong:
+
+1. See: HOW_TO_START_SERVER.md (startup problems)
+2. See: LOGIN_TROUBLESHOOTING.md (login problems)
+3. See: README_SESSION_2.md (everything else)
+4. Run: python diagnose.py (test API)
+
+
+================================================================================
+                    READY? LET'S GO! 🐶
+================================================================================

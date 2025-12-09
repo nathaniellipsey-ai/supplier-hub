@@ -7,10 +7,11 @@ Provides REST endpoints for supplier data, search, filtering, and management.
 🔴 IMPORTANT: ZERO LOCAL SUPPLIER DATA - All data comes from imports/API
 """
 
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
+from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
 import json
@@ -81,15 +82,20 @@ logger.info(f"[STATUS] Total suppliers in memory: {len(ALL_SUPPLIERS)}")
 # AUTHENTICATION ENDPOINTS
 # ============================================================================
 
+# Pydantic models for request validation
+class LoginRequest(BaseModel):
+    email: str
+    name: str
+    walmart_id: Optional[str] = None
+
 @app.post("/api/auth/login")
-async def login(data: dict):
+async def login(request: LoginRequest):
     """User login endpoint - accepts JSON data."""
     try:
         import uuid
-        email = str(data.get("email", "")).strip()
-        name = str(data.get("name", "")).strip()
-        walmart_id_raw = data.get("walmart_id")
-        walmart_id = str(walmart_id_raw).strip() if walmart_id_raw else None
+        email = request.email.strip()
+        name = request.name.strip()
+        walmart_id = request.walmart_id.strip() if request.walmart_id else None
         
         if not email or not name:
             raise HTTPException(status_code=400, detail="Email and name are required")
@@ -218,15 +224,24 @@ async def import_suppliers(file: UploadFile = File(...), user_id: str = "default
         logger.error(f"Import error: {e}")
         raise HTTPException(status_code=400, detail=f"Import failed: {str(e)}")
 
+class SupplierRequest(BaseModel):
+    name: str
+    category: str
+    location: str
+    region: str
+    rating: float
+    aiScore: int
+    products: List[str]
+    certifications: List[str]
+    walmartVerified: bool
+    yearsInBusiness: int
+    projectsCompleted: int
+
 @app.post("/api/suppliers/add")
-async def add_supplier(request_body: dict = None):
+async def add_supplier(supplier_data: SupplierRequest):
     """Add a single supplier."""
     try:
-        if request_body is None:
-            raise HTTPException(status_code=400, detail="Request body is required")
-        
-        # Validate required fields
-        name = request_body.get("name", "").strip()
+        name = supplier_data.name.strip()
         if not name:
             raise HTTPException(status_code=400, detail="Supplier name is required")
         
@@ -234,7 +249,17 @@ async def add_supplier(request_body: dict = None):
         
         supplier = {
             "id": supplier_id,
-            **request_body,
+            "name": name,
+            "category": supplier_data.category,
+            "location": supplier_data.location,
+            "region": supplier_data.region,
+            "rating": supplier_data.rating,
+            "aiScore": supplier_data.aiScore,
+            "products": supplier_data.products,
+            "certifications": supplier_data.certifications,
+            "walmartVerified": supplier_data.walmartVerified,
+            "yearsInBusiness": supplier_data.yearsInBusiness,
+            "projectsCompleted": supplier_data.projectsCompleted,
             "created_at": datetime.now().isoformat()
         }
         
@@ -253,17 +278,24 @@ async def add_supplier(request_body: dict = None):
         raise HTTPException(status_code=400, detail=f"Failed to add supplier: {str(e)}")
 
 @app.put("/api/suppliers/{supplier_id}")
-async def edit_supplier(supplier_id: int, request_body: dict = None):
+async def edit_supplier(supplier_id: int, supplier_data: SupplierRequest):
     """Edit an existing supplier."""
     if supplier_id not in ALL_SUPPLIERS:
         raise HTTPException(status_code=404, detail="Supplier not found")
     
     try:
-        if request_body is None:
-            raise HTTPException(status_code=400, detail="Request body is required")
-        
         ALL_SUPPLIERS[supplier_id].update({
-            **request_body,
+            "name": supplier_data.name,
+            "category": supplier_data.category,
+            "location": supplier_data.location,
+            "region": supplier_data.region,
+            "rating": supplier_data.rating,
+            "aiScore": supplier_data.aiScore,
+            "products": supplier_data.products,
+            "certifications": supplier_data.certifications,
+            "walmartVerified": supplier_data.walmartVerified,
+            "yearsInBusiness": supplier_data.yearsInBusiness,
+            "projectsCompleted": supplier_data.projectsCompleted,
             "updated_at": datetime.now().isoformat()
         })
         logger.info(f"[UPDATE] Updated supplier: {ALL_SUPPLIERS[supplier_id]['name']}")
