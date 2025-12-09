@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Standalone FastAPI app for Render - imports app_minimal"""
+"""Standalone FastAPI app for Render - uses main app.py"""
 
-from app_minimal import app
+from app import app
 
 if __name__ == "__main__":
     import uvicorn

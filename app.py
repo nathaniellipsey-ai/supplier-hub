@@ -49,6 +49,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files (HTML, CSS, favicon, etc.)
+import os
+if os.path.exists(os.path.dirname(__file__)):
+    app.mount("/static", StaticFiles(directory=os.path.dirname(__file__)), name="static")
+
 # ============================================================================
 # DATABASE STORAGE (No Local Generation)
 # ============================================================================
@@ -477,7 +482,16 @@ async def health_check():
 
 @app.get("/")
 async def root():
-    """Root endpoint with API documentation."""
+    """Serve the main dashboard HTML."""
+    try:
+        import os
+        index_path = os.path.join(os.path.dirname(__file__), "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path, media_type="text/html")
+    except:
+        pass
+    
+    # Fallback API response
     return {
         "api": "Supplier Search Engine",
         "version": "3.0.0",
@@ -496,6 +510,30 @@ async def root():
             "✅ Hardware & Fixtures Filters"
         ]
     }
+
+@app.get("/{file_path:path}")
+async def serve_static(file_path: str):
+    """Serve static files (HTML, CSS, JS, etc.)."""
+    try:
+        import os
+        full_path = os.path.join(os.path.dirname(__file__), file_path)
+        if os.path.exists(full_path) and os.path.isfile(full_path):
+            if file_path.endswith('.html'):
+                return FileResponse(full_path, media_type="text/html")
+            elif file_path.endswith('.css'):
+                return FileResponse(full_path, media_type="text/css")
+            elif file_path.endswith('.js'):
+                return FileResponse(full_path, media_type="application/javascript")
+            elif file_path.endswith('.svg'):
+                return FileResponse(full_path, media_type="image/svg+xml")
+            elif file_path.endswith('.json'):
+                return FileResponse(full_path, media_type="application/json")
+            else:
+                return FileResponse(full_path)
+    except:
+        pass
+    
+    raise HTTPException(status_code=404, detail="File not found")
 
 if __name__ == "__main__":
     import uvicorn
