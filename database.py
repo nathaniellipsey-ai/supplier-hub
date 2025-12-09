@@ -1,4 +1,4 @@
-"""SQLite database module for Supplier Search Engine dashboard.
+"""SQLite database module for Supplier Search Engine.
 
 Handles all database initialization, schema creation, and operations
 for managing supplier data.
@@ -55,7 +55,6 @@ class SupplierDatabase:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
-            # Suppliers table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS suppliers (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,7 +75,6 @@ class SupplierDatabase:
                 )
             """)
             
-            # Products table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS products (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,7 +90,6 @@ class SupplierDatabase:
                 )
             """)
             
-            # Search history table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS search_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,7 +100,6 @@ class SupplierDatabase:
                 )
             """)
             
-            # Create indexes for better query performance
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_supplier_name 
                 ON suppliers(name)
