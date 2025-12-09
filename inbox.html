@@ -4,7 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inbox - Supplier Hub</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="shortcut icon" href="favicon.svg">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&family=Space+Grotesk:wght@500;700&display=swap');
+        
+        :root {
+            --walmart-blue: #0071ce;
+            --walmart-dark-blue: #004c91;
+            --light-bg: #f8f9fa;
+            --border: #e0e0e0;
+            --body-font: 'Inter', 'Helvetica Neue', sans-serif;
+            --accent-font: 'Space Grotesk', 'Helvetica', sans-serif;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,33 +25,57 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            font-family: var(--body-font);
+            background: #ffffff;
+            background-image: 
+                linear-gradient(90deg, rgba(0, 113, 206, 0.03) 1px, transparent 1px),
+                linear-gradient(rgba(0, 113, 206, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 0;
+            margin: 0;
         }
         
         .header {
-            background: linear-gradient(135deg, #0071ce 0%, #005bb3 100%);
+            background: var(--walmart-blue);
             color: white;
-            padding: 30px;
+            padding: 30px 20px;
+            border-bottom: 3px solid #ffc220;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 20px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            color: var(--walmart-blue);
         }
         
         .header h1 {
             font-size: 28px;
-            font-weight: 600;
+            font-weight: 700;
+            margin: 0;
         }
         
         .header-actions {
@@ -49,182 +86,31 @@
         .btn {
             padding: 10px 20px;
             background: white;
-            color: #0071ce;
+            color: var(--walmart-blue);
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: 600;
+            font-size: 13px;
             transition: all 0.3s;
+            font-family: var(--accent-font);
         }
         
         .btn:hover {
-            background: #f0f0f0;
+            background: #ffc220;
+            color: #333;
             transform: translateY(-2px);
         }
         
-        .content {
-            padding: 30px;
-        }
-        
-        .no-messages {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-        
-        .no-messages-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-        
-        .messages-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .message {
-            padding: 20px;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        
-        .message:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-color: #0071ce;
-        }
-        
-        .message.unread {
-            background: #f0f7ff;
-            border-left: 4px solid #0071ce;
-        }
-        
-        .message-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 10px;
-        }
-        
-        .message-subject {
-            font-weight: 600;
-            font-size: 16px;
-            color: #333;
-        }
-        
-        .message.unread .message-subject {
-            color: #0071ce;
-        }
-        
-        .message-meta {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            font-size: 12px;
-            color: #999;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
-        .badge-info {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-        
-        .badge-success {
-            background: #e8f5e9;
-            color: #388e3c;
-        }
-        
-        .badge-warning {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-        
-        .badge-alert {
-            background: #ffebee;
-            color: #c62828;
-        }
-        
-        .message-content {
-            color: #666;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 10px;
-        }
-        
-        .message-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-        
-        .action-btn {
-            padding: 6px 12px;
-            background: #f5f5f5;
-            color: #333;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s;
-        }
-        
-        .action-btn:hover {
-            background: #e0e0e0;
-        }
-        
-        .back-btn {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background: #f5f5f5;
-            color: #333;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: all 0.3s;
-        }
-        
-        .back-btn:hover {
-            background: #e0e0e0;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-        
-        .spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #0071ce;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
         }
         
         .email-subscriptions {
-            background: #f9f9f9;
-            border: 1px solid #e0e0e0;
+            background: var(--light-bg);
+            border: 1px solid var(--border);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 30px;
@@ -232,8 +118,8 @@
         
         .subscriptions-title {
             font-size: 16px;
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: var(--walmart-blue);
             margin-bottom: 15px;
             display: flex;
             align-items: center;
@@ -251,20 +137,194 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px;
+            padding: 12px;
             background: white;
-            border: 1px solid #eee;
+            border: 1px solid var(--border);
             border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .subscription-item:hover {
+            border-color: var(--walmart-blue);
+        }
+        
+        .subscription-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
         
         .subscription-email {
-            font-weight: 500;
+            font-weight: 600;
             color: #333;
         }
         
         .subscription-status {
             font-size: 12px;
+            color: #999;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            background: var(--light-bg);
+            color: #333;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-family: var(--accent-font);
+        }
+        
+        .action-btn:hover {
+            background: var(--walmart-blue);
+            color: white;
+            border-color: var(--walmart-blue);
+        }
+        
+        .add-email-btn {
+            width: 100%;
+            background: var(--walmart-blue);
+            color: white;
+        }
+        
+        .add-email-btn:hover {
+            background: var(--walmart-dark-blue);
+            color: white;
+        }
+        
+        .messages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .message:hover {
+            box-shadow: 0 8px 16px rgba(0, 113, 206, 0.1);
+            border-color: var(--walmart-blue);
+        }
+        
+        .message.unread {
+            background: #f0f7ff;
+            border-left: 4px solid var(--walmart-blue);
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        
+        .message-subject {
+            font-weight: 700;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .message.unread .message-subject {
+            color: var(--walmart-blue);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        
+        .badge-info {
+            background: rgba(0, 113, 206, 0.1);
+            color: var(--walmart-blue);
+        }
+        
+        .badge-success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #388e3c;
+        }
+        
+        .badge-warning {
+            background: rgba(255, 152, 0, 0.1);
+            color: #f57c00;
+        }
+        
+        .badge-alert {
+            background: rgba(244, 67, 54, 0.1);
+            color: #c62828;
+        }
+        
+        .message-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .message-content {
             color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: var(--light-bg);
+            border-radius: 4px;
+        }
+        
+        .message-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .no-messages {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .no-messages-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--light-bg);
+            border-top: 3px solid var(--walmart-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         .modal {
@@ -301,9 +361,10 @@
         }
         
         .modal-header h2 {
-            color: #333;
+            color: var(--walmart-blue);
             margin: 0;
             font-size: 20px;
+            font-weight: 700;
         }
         
         .modal-close {
@@ -312,6 +373,11 @@
             font-size: 24px;
             cursor: pointer;
             color: #999;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            color: var(--walmart-blue);
         }
         
         .form-group {
@@ -324,14 +390,28 @@
         .form-group label {
             font-weight: 600;
             color: #333;
-            font-size: 14px;
+            font-size: 13px;
         }
         
         .form-group input {
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border);
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 13px;
+            font-family: var(--body-font);
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--walmart-blue);
+            box-shadow: 0 0 0 3px rgba(0, 113, 206, 0.1);
+        }
+        
+        .modal-info {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
         }
         
         .modal-actions {
@@ -340,36 +420,55 @@
             margin-top: 20px;
         }
         
-        .modal-actions .btn {
+        .modal-actions button {
             flex: 1;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            border: none;
+            transition: all 0.3s;
+            font-family: var(--accent-font);
+        }
+        
+        .footer {
+            max-width: 1200px;
+            margin: 60px auto 0;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: #999;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Inbox</h1>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-logo">📬</div>
+                <h1>Inbox</h1>
+            </div>
             <div class="header-actions">
                 <button class="btn" onclick="markAllAsRead()">Mark All as Read</button>
                 <button class="btn" onclick="window.history.back()">Back</button>
             </div>
         </div>
-        
-        <div class="content">
-            <!-- Email Subscriptions Section -->
-            <div class="email-subscriptions">
-                <div class="subscriptions-title">
-                    📧 Email Subscriptions
-                </div>
-                <div class="subscription-list" id="subscriptionsList"></div>
-                <button class="btn" onclick="showAddEmailModal()" style="background: #0071ce; color: white; width: 100%;">
-                    + Add Email Address
-                </button>
-            </div>
-            
-            <!-- Messages Section -->
-            <div id="messages-container"></div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Email Subscriptions Section -->
+        <div class="email-subscriptions">
+            <div class="subscriptions-title">📧 Email Subscriptions</div>
+            <div class="subscription-list" id="subscriptionsList"></div>
+            <button class="btn add-email-btn" onclick="showAddEmailModal()">+ Add Email Address</button>
         </div>
+        
+        <!-- Messages Section -->
+        <div id="messages-container"></div>
     </div>
     
     <!-- Add Email Modal -->
@@ -379,7 +478,7 @@
                 <h2>📧 Add Email Subscription</h2>
                 <button class="modal-close" onclick="closeEmailModal()">✕</button>
             </div>
-            <div style="margin-bottom: 20px; color: #666; font-size: 14px;">
+            <div class="modal-info">
                 Add an email address to pull personal emails into your inbox.
             </div>
             <form onsubmit="submitAddEmail(event)">
@@ -392,14 +491,19 @@
                     <input type="password" id="passwordInput" placeholder="Your email password or app-specific password" required>
                 </div>
                 <div class="form-group">
-                    <label style="font-size: 12px; color: #666;">ℹ️ For Gmail, use an App Password. For Outlook, use your account password.</label>
+                    <label style="font-size: 11px; color: #999; font-weight: 400;">ℹ️ For Gmail, use an App Password. For Outlook, use your account password.</label>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn" onclick="closeEmailModal()">Cancel</button>
-                    <button type="submit" class="btn" style="background: #0071ce; color: white;">Add Email</button>
+                    <button type="button" class="btn" onclick="closeEmailModal()" style="background: var(--light-bg); color: #333; border: 1px solid var(--border);">Cancel</button>
+                    <button type="submit" class="btn" style="background: var(--walmart-blue); color: white;">Add Email</button>
                 </div>
             </form>
         </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p>Supplier Hub v2.0 | Built with modern web technologies | All rights reserved</p>
     </div>
     
     <script>
@@ -460,7 +564,7 @@
                         <div class="message-meta">
                             <span>From: ${msg.sender}</span>
                             <span>${formatDate(msg.created_at)}</span>
-                            ${!msg.read ? '<span style="color: #0071ce; font-weight: 600;">NEW</span>' : ''}
+                            ${!msg.read ? '<span style="color: var(--walmart-blue); font-weight: 600;">NEW</span>' : ''}
                         </div>
                         <div class="message-content">${msg.message}</div>
                         <div class="message-actions">
@@ -477,6 +581,7 @@
                         <div class="no-messages-icon">⚠️</div>
                         <h3>Error Loading Inbox</h3>
                         <p>${error.message}</p>
+                        <button class="btn" style="margin-top: 20px;" onclick="loadInbox()">Retry</button>
                     </div>
                 `;
             }
@@ -524,7 +629,7 @@
         function loadSubscriptions() {
             const list = document.getElementById('subscriptionsList');
             if (emailSubscriptions.length === 0) {
-                list.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No email subscriptions yet. Add one to start pulling emails into your inbox.</p>';
+                list.innerHTML = '<p style="color: #999; text-align: center; padding: 20px; font-size: 13px;">No email subscriptions yet. Add one to start pulling emails into your inbox.</p>';
                 return;
             }
             
@@ -534,7 +639,7 @@
                         <span class="subscription-email">${sub.email}</span>
                         <span class="subscription-status">Active • ${sub.addedDate ? new Date(sub.addedDate).toLocaleDateString() : 'Recently added'}</span>
                     </div>
-                    <button class="action-btn" onclick="removeSubscription(${idx})" style="background: #ffebee; color: #c62828;">
+                    <button class="action-btn" onclick="removeSubscription(${idx})" style="background: rgba(244, 67, 54, 0.1); color: #c62828;">
                         Remove
                     </button>
                 </div>
