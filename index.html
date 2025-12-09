@@ -84,7 +84,7 @@ Created with ❤️ by Code Puppy 🐶
                 linear-gradient(rgba(0, 113, 206, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
             font-size: 13px;
-            line-height: 1.4;
+            line-height: 1.2;
             margin: 0;
             padding: 0;
         }
@@ -852,8 +852,8 @@ Created with ❤️ by Code Puppy 🐶
             background: linear-gradient(white, white) padding-box,
                         linear-gradient(135deg, var(--walmart-blue), var(--walmart-yellow)) border-box;
             border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
@@ -2359,14 +2359,14 @@ async function searchSuppliersFromAPI(query) {
                 const apiUrl = `${API_URL}/api/suppliers?skip=0&limit=5000`;
                 
                 console.log('[loadSuppliersFromAPI] Fetching from:', apiUrl);
-                const response = await fetch(apiUrl);
+                const response = await fetch(apiUrl, { mode: 'cors', credentials: 'omit' });
                 
                 if (!response.ok) {
                     throw new Error(`API error: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                console.log('[loadSuppliersFromAPI] Received:', data.count, 'suppliers');
+                console.log('[loadSuppliersFromAPI] Received:', data.count || data.suppliers?.length, 'suppliers');
                 
                 allSuppliers = data.suppliers || [];
                 filteredSuppliers = [...allSuppliers];
@@ -2377,16 +2377,52 @@ async function searchSuppliersFromAPI(query) {
                     filteredSuppliers = [...allSuppliers];
                 }
                 
+                // Update connection status
+                const statusEl = document.getElementById('spStatus');
+                if (statusEl) statusEl.textContent = `✅ Connected (${allSuppliers.length} suppliers)`;
+                
                 // Initialize filters now that we have data
                 initializeFilters();
                 updateDisplay();
+                loadStatsFromAPI();
             } catch (error) {
                 console.error('[loadSuppliersFromAPI] Error:', error);
                 console.warn('[loadSuppliersFromAPI] Falling back to generated data');
+                
+                // Update status to show fallback
+                const statusEl = document.getElementById('spStatus');
+                if (statusEl) statusEl.textContent = '⚠️ Using local data';
+                
                 allSuppliers = generateSuppliers();
                 filteredSuppliers = [...allSuppliers];
                 initializeFilters();
                 updateDisplay();
+            }
+        }
+        
+        async function loadStatsFromAPI() {
+            try {
+                const statsUrl = `${API_URL}/api/dashboard/stats`;
+                const response = await fetch(statsUrl, { mode: 'cors', credentials: 'omit' });
+                
+                if (!response.ok) throw new Error('Stats error');
+                
+                const stats = await response.json();
+                console.log('[loadStatsFromAPI] Received stats:', stats);
+                
+                // Update dashboard stats
+                const totalEl = document.getElementById('totalSuppliersCount');
+                const verifiedEl = document.getElementById('verifiedCount');
+                
+                if (totalEl) totalEl.textContent = stats.total_suppliers || allSuppliers.length;
+                if (verifiedEl) verifiedEl.textContent = stats.walmart_verified || 0;
+            } catch (error) {
+                console.warn('[loadStatsFromAPI] Could not load stats from API:', error);
+                // Fallback to calculated stats
+                const totalEl = document.getElementById('totalSuppliersCount');
+                const verifiedEl = document.getElementById('verifiedCount');
+                if (totalEl) totalEl.textContent = allSuppliers.length;
+                if (verifiedEl) verifiedEl.textContent = allSuppliers.filter(s => s.walmartVerified).length;
             }
         }
         
@@ -3695,47 +3731,36 @@ async function searchSuppliersFromAPI(query) {
         }
 
         async function toggleFavorite(supplierId) {
-            if (!authClient || !authClient.isAuthenticated) {
-                alert('Please login to save favorites');
-                return;
-            }
-
             try {
-                // Get supplier name for the API
                 const supplier = allSuppliers.find(s => s.id === supplierId);
                 if (!supplier) return;
 
-                // Find the supplier in filtered or all list
-                const supplierName = supplier.name;
+                // Get current favorites from localStorage
+                const favs = JSON.parse(localStorage.getItem('supplier_favorites') || '[]');
+                const index = favs.findIndex(f => f.id === supplierId);
 
-                // Check if already favorited
-                const favorites = await authClient.getFavorites();
-                const isFavorited = favorites.favorites && favorites.favorites.some(f => f.supplier_id === supplierId);
-
-                if (isFavorited) {
-                    // Remove favorite
-                    await authClient.removeFavorite(supplierId);
-                    showNotification(`Removed from favorites`);
+                if (index > -1) {
+                    // Remove from favorites
+                    favs.splice(index, 1);
+                    showNotification('❤️ Removed from favorites');
                 } else {
-                    // Add favorite
-                    await authClient.addFavorite(supplierId, supplierName);
-                    showNotification(`Added to favorites!`);
+                    // Add to favorites
+                    favs.push({ id: supplierId, name: supplier.name, category: supplier.category });
+                    showNotification('❤️ Added to favorites!');
                 }
 
-                await updateFavoriteButtons();
+                localStorage.setItem('supplier_favorites', JSON.stringify(favs));
+                updateFavoriteButtons();
             } catch (error) {
                 console.error('Error toggling favorite:', error);
-                alert('Error updating favorite: ' + error.message);
+                showNotification('⚠️ Error updating favorite');
             }
         }
 
-        async function updateFavoriteButtons() {
-            if (!authClient || !authClient.isAuthenticated) return;
-
+        function updateFavoriteButtons() {
             try {
-                const result = await authClient.getFavorites();
-                const favorites = result.favorites || [];
-                const favoriteIds = favorites.map(f => f.supplier_id);
+                const favs = JSON.parse(localStorage.getItem('supplier_favorites') || '[]');
+                const favoriteIds = favs.map(f => f.id);
 
                 document.querySelectorAll('.favorite-btn').forEach(btn => {
                     const supplierId = parseInt(btn.id.replace('fav-', ''));
@@ -3747,16 +3772,16 @@ async function searchSuppliersFromAPI(query) {
                         btn.classList.remove('favorited');
                     }
                 });
+                updateFavoriteCount();
             } catch (error) {
                 console.error('Error updating favorite buttons:', error);
             }
         }
 
-        async function updateFavoriteCount() {
-            if (!authClient || !authClient.isAuthenticated) return;
+        function updateFavoriteCount() {
             try {
-                const result = await authClient.getFavorites();
-                const count = result.favorites ? result.favorites.length : 0;
+                const favs = JSON.parse(localStorage.getItem('supplier_favorites') || '[]');
+                const count = favs.length;
                 const favCountElem = document.getElementById('favCount');
                 if (favCountElem) favCountElem.textContent = count;
                 const favCountDrop = document.getElementById('favCountDrop');
@@ -3786,7 +3811,8 @@ async function searchSuppliersFromAPI(query) {
             const supplier = allSuppliers.find(s => s.id === supplierId);
             if (!supplier) return;
 
-            const currentNote = (userData.notes && userData.notes[supplierId]) || '';
+            const notes = JSON.parse(localStorage.getItem('supplier_notes') || '{}');
+            const currentNote = notes[supplierId] || '';
 
             const modalHTML = `
                 <div class="note-modal" id="noteModal">
@@ -3814,45 +3840,46 @@ async function searchSuppliersFromAPI(query) {
             if (modal) modal.remove();
         }
 
-        async function saveNote(supplierId) {
+        function saveNote(supplierId) {
             const noteText = document.getElementById('noteTextarea').value.trim();
-            
-            if (!userData.notes) userData.notes = {};
+            const notes = JSON.parse(localStorage.getItem('supplier_notes') || '{}');
 
             if (noteText) {
-                await storage.saveNote(currentUser, supplierId, noteText);
-                userData.notes[supplierId] = noteText;
-                showNotification('✅ Note saved successfully!' + (useSharePoint ? ' (Synced to SharePoint)' : ''));
+                notes[supplierId] = noteText;
+                showNotification('✅ Note saved!');
             } else {
-                await storage.saveNote(currentUser, supplierId, '');
-                delete userData.notes[supplierId];
+                delete notes[supplierId];
                 showNotification('🗑️ Note deleted');
             }
 
-            await updateNoteButtons();
+            localStorage.setItem('supplier_notes', JSON.stringify(notes));
+            updateNoteButtons();
             closeNoteModal();
         }
 
-        async function deleteNote(supplierId) {
-            if (userData.notes && userData.notes[supplierId]) {
-                await storage.saveNote(currentUser, supplierId, '');
-                delete userData.notes[supplierId];
-                await updateNoteButtons();
+        function deleteNote(supplierId) {
+            const notes = JSON.parse(localStorage.getItem('supplier_notes') || '{}');
+            if (notes[supplierId]) {
+                delete notes[supplierId];
+                localStorage.setItem('supplier_notes', JSON.stringify(notes));
+                updateNoteButtons();
                 showNotification('🗑️ Note deleted');
             }
-
             closeNoteModal();
         }
 
         function updateNoteButtons() {
-            if (!userData || !userData.notes) return;
-
+            const notes = JSON.parse(localStorage.getItem('supplier_notes') || '{}');
             document.querySelectorAll('.note-btn').forEach(btn => {
-                const supplierId = parseInt(btn.getAttribute('onclick').match(/\d+/)[0]);
-                if (userData.notes[supplierId]) {
-                    btn.classList.add('has-note');
-                } else {
-                    btn.classList.remove('has-note');
+                const onclick = btn.getAttribute('onclick');
+                const match = onclick.match(/\d+/);
+                if (match) {
+                    const supplierId = parseInt(match[0]);
+                    if (notes[supplierId]) {
+                        btn.classList.add('has-note');
+                    } else {
+                        btn.classList.remove('has-note');
+                    }
                 }
             });
         }
