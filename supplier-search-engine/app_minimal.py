@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""FastAPI app that serves frontend and proxies/imports real backend API."""
+"""FastAPI app with embedded supplier generation and traditional auth."""
 
 import sys
 import os
+import random
+import hashlib
+import secrets
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Query
+from datetime import datetime
+from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
-# Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
+print("[INFO] Starting Supplier Search Engine API...")
 
 app = FastAPI(title="Supplier Search Engine")
 
@@ -22,33 +25,134 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize suppliers
-BACKEND_AVAILABLE = False
-ALL_SUPPLIERS = []
+# ============================================================================
+# EMBEDDED SUPPLIER GENERATION
+# ============================================================================
 
-try:
-    print("[INFO] Attempting to import backend modules...")
-    from backend.suppliers_generator import SupplierGenerator
-    print("[INFO] Successfully imported SupplierGenerator")
+print("[INFO] Generating suppliers with seeded RNG...")
+
+class SeededRandom:
+    """Seeded RNG using seed 1962 (Walmart founding year)"""
+    def __init__(self, seed=1962):
+        self.rng = random.Random(seed)
+    def random(self):
+        return self.rng.random()
+
+def generate_suppliers():
+    """Generate 5000 suppliers with seeded randomness"""
+    seeded = SeededRandom(1962)
     
-    # Initialize real supplier data
-    print("[INFO] Generating suppliers...")
-    generator = SupplierGenerator()
-    ALL_SUPPLIERS = generator.generate_suppliers()
-    BACKEND_AVAILABLE = True
-    print(f"[SUCCESS] Loaded {len(ALL_SUPPLIERS)} suppliers from backend")
-except Exception as e:
-    print(f"[ERROR] Could not load suppliers: {type(e).__name__}: {e}")
-    print("[WARNING] Falling back to minimal data")
-    BACKEND_AVAILABLE = False
-    # Minimal fallback data
-    ALL_SUPPLIERS = [
-        {"id": 1, "name": "Premier Lumber Co.", "category": "Lumber & Wood Products", "location": "Portland, OR", "rating": 4.8, "products": ["2x4 Lumber", "Plywood"], "walmartVerified": True, "aiScore": 92},
-        {"id": 2, "name": "Elite Concrete Distributors", "category": "Concrete & Masonry", "location": "Houston, TX", "rating": 4.6, "products": ["Ready-Mix Concrete", "Cinder Blocks"], "walmartVerified": True, "aiScore": 89},
-        {"id": 3, "name": "Pro Steel & Metal", "category": "Steel & Metal", "location": "Pittsburgh, PA", "rating": 4.7, "products": ["Steel Beams", "Rebar"], "walmartVerified": True, "aiScore": 91},
+    product_categories = {
+        "Lumber & Wood Products": ["2x4 Lumber", "Plywood", "Particle Board", "MDF", "Hardwood Flooring", "Cedar Shingles"],
+        "Concrete & Masonry": ["Portland Cement", "Ready-Mix Concrete", "Cinder Blocks", "Bricks", "Gravel", "Sand"],
+        "Steel & Metal": ["Steel Beams", "Rebar", "Steel Pipe", "Aluminum Siding", "Metal Roofing", "Wire Mesh"],
+        "Electrical Supplies": ["Electrical Wire", "Outlets", "Light Fixtures", "Circuit Breakers", "Conduit", "Switches"],
+        "Plumbing Supplies": ["PVC Pipe", "Copper Pipe", "Faucets", "Valves", "Toilets", "Sink Fixtures"],
+        "HVAC Equipment": ["Air Conditioning Units", "Furnaces", "Heat Pumps", "Ductwork", "Thermostats", "Insulation"],
+        "Roofing Materials": ["Asphalt Shingles", "Metal Roofing", "Tar & Gravel", "Underlayment", "Flashing", "Gutters"],
+        "Windows & Doors": ["Vinyl Windows", "Wood Doors", "Sliding Glass Doors", "Storm Windows", "Hardware", "Weather Stripping"],
+        "Paint & Finishes": ["Interior Paint", "Exterior Paint", "Primer", "Stain", "Polyurethane", "Caulk"],
+        "Hardware & Fasteners": ["Nails", "Screws", "Bolts", "Hinges", "Locks", "Tools"]
+    }
+    
+    adjectives = ['Premier', 'Elite', 'Pro', 'Superior', 'Quality', 'Reliable', 'National', 'Metro', 'Coastal', 'Summit', 'Precision', 'BuildRight', 'Apex', 'Pioneer', 'TruValue', 'First Choice', 'Top Tier', 'Allied', 'United', 'Global', 'Platinum', 'Diamond', 'Crown', 'Ace', 'Master', 'Prime', 'Advantage', 'American', 'Industrial', 'Commercial', 'Advanced', 'Dynamic', 'Innovative', 'Strategic', 'Certified', 'Professional', 'Executive', 'Specialist', 'Expert', 'Mega', 'Ultra', 'Super', 'Best', 'Direct', 'Express', 'Rapid', 'Swift', 'Instant', 'Quick']
+    
+    company_types = ['Inc.', 'LLC', 'Corp.', 'Co.', 'Supply Co.', 'Distributors', 'Materials', 'Solutions', 'Industries', 'Group', 'Enterprises', 'Services', 'Systems', 'Technologies']
+    
+    cities = [
+        {'city': 'New York', 'state': 'NY', 'region': 'Northeast'},
+        {'city': 'Los Angeles', 'state': 'CA', 'region': 'West'},
+        {'city': 'Chicago', 'state': 'IL', 'region': 'Midwest'},
+        {'city': 'Houston', 'state': 'TX', 'region': 'Southwest'},
+        {'city': 'Phoenix', 'state': 'AZ', 'region': 'Southwest'},
+        {'city': 'Philadelphia', 'state': 'PA', 'region': 'Northeast'},
+        {'city': 'San Antonio', 'state': 'TX', 'region': 'Southwest'},
+        {'city': 'San Diego', 'state': 'CA', 'region': 'West'},
+        {'city': 'Dallas', 'state': 'TX', 'region': 'Southwest'},
+        {'city': 'San Jose', 'state': 'CA', 'region': 'West'},
+        {'city': 'Austin', 'state': 'TX', 'region': 'Southwest'},
+        {'city': 'Jacksonville', 'state': 'FL', 'region': 'Southeast'},
+        {'city': 'Fort Worth', 'state': 'TX', 'region': 'Southwest'},
+        {'city': 'Columbus', 'state': 'OH', 'region': 'Midwest'},
+        {'city': 'Charlotte', 'state': 'NC', 'region': 'Southeast'},
+        {'city': 'Seattle', 'state': 'WA', 'region': 'West'},
+        {'city': 'Denver', 'state': 'CO', 'region': 'West'},
+        {'city': 'Boston', 'state': 'MA', 'region': 'Northeast'},
+        {'city': 'Portland', 'state': 'OR', 'region': 'West'},
+        {'city': 'Las Vegas', 'state': 'NV', 'region': 'West'},
+        {'city': 'Detroit', 'state': 'MI', 'region': 'Midwest'},
+        {'city': 'Memphis', 'state': 'TN', 'region': 'Southeast'},
+        {'city': 'Baltimore', 'state': 'MD', 'region': 'Northeast'},
+        {'city': 'Milwaukee', 'state': 'WI', 'region': 'Midwest'},
+        {'city': 'Atlanta', 'state': 'GA', 'region': 'Southeast'},
+        {'city': 'Miami', 'state': 'FL', 'region': 'Southeast'},
+        {'city': 'Indianapolis', 'state': 'IN', 'region': 'Midwest'},
+        {'city': 'Kansas City', 'state': 'MO', 'region': 'Midwest'},
+        {'city': 'Minneapolis', 'state': 'MN', 'region': 'Midwest'},
+        {'city': 'Raleigh', 'state': 'NC', 'region': 'Southeast'}
     ]
+    
+    certifications = ['ISO 9001', 'ISO 14001', 'OSHA Certified', 'EPA Certified', 'NSF Certified', 'UL Listed', 'ANSI Certified', 'Green Building', 'Walmart Supplier Standards', 'WBE Certified']
+    
+    suppliers = []
+    used_names = set()
+    supplier_id = 1
+    
+    for category, products in product_categories.items():
+        suppliers_per_category = 5000 // len(product_categories)
+        
+        for i in range(suppliers_per_category):
+            category_short = category.split()[0]
+            
+            # Generate unique name
+            for attempt in range(20):
+                adj = adjectives[int(seeded.random() * len(adjectives))]
+                type_suffix = company_types[int(seeded.random() * len(company_types))]
+                name = f"{adj} {category_short} {type_suffix}"
+                
+                if name not in used_names:
+                    break
+            
+            used_names.add(name)
+            city_data = cities[int(seeded.random() * len(cities))]
+            
+            # Products
+            num_products = int(seeded.random() * 5) + 2
+            supplier_products = []
+            for _ in range(num_products):
+                prod = products[int(seeded.random() * len(products))]
+                if prod not in supplier_products:
+                    supplier_products.append(prod)
+            
+            # Certifications
+            num_certs = int(seeded.random() * 3) + 1
+            supplier_certs = []
+            for _ in range(num_certs):
+                cert = certifications[int(seeded.random() * len(certifications))]
+                if cert not in supplier_certs:
+                    supplier_certs.append(cert)
+            
+            suppliers.append({
+                'id': supplier_id,
+                'name': name,
+                'category': category,
+                'location': f"{city_data['city']}, {city_data['state']}",
+                'region': city_data['region'],
+                'rating': round(seeded.random() * 1.5 + 3.5, 1),
+                'aiScore': int(seeded.random() * 30 + 70),
+                'products': supplier_products,
+                'certifications': supplier_certs,
+                'walmartVerified': seeded.random() > 0.4,
+                'yearsInBusiness': int(seeded.random() * 40 + 5),
+                'projectsCompleted': int(seeded.random() * 5000 + 100),
+            })
+            
+            supplier_id += 1
+    
+    return suppliers
 
-print(f"[INFO] Total suppliers available: {len(ALL_SUPPLIERS)}")
+ALL_SUPPLIERS = generate_suppliers()
+print(f"[SUCCESS] Generated {len(ALL_SUPPLIERS)} suppliers")
 
 # ============================================================================
 # HEALTH CHECKS
@@ -59,19 +163,18 @@ def health():
     return {
         "status": "healthy",
         "message": "Server is running",
-        "backend_available": BACKEND_AVAILABLE
+        "suppliers_count": len(ALL_SUPPLIERS)
     }
 
 @app.get("/api/health")
 def api_health():
     return {
         "status": "ok",
-        "suppliers_count": len(ALL_SUPPLIERS),
-        "backend_available": BACKEND_AVAILABLE
+        "suppliers_count": len(ALL_SUPPLIERS)
     }
 
 # ============================================================================
-# SUPPLIER ENDPOINTS - SAME AS BACKEND
+# SUPPLIER ENDPOINTS
 # ============================================================================
 
 @app.get("/api/suppliers")
@@ -155,7 +258,6 @@ def get_stats():
     avg_rating = sum(s.get('rating', 0) for s in ALL_SUPPLIERS) / len(ALL_SUPPLIERS)
     avg_ai_score = sum(s.get('aiScore', 0) for s in ALL_SUPPLIERS) / len(ALL_SUPPLIERS)
     
-    # Get categories breakdown
     categories = {}
     for supplier in ALL_SUPPLIERS:
         cat = supplier.get('category', 'Unknown')
@@ -178,163 +280,226 @@ def get_categories():
     return {"categories": sorted(list(categories))}
 
 # ============================================================================
-# AUTH ENDPOINTS - STUB IMPLEMENTATIONS
+# TRADITIONAL AUTHENTICATION
 # ============================================================================
 
-@app.post("/api/auth/sso")
-def sso_login(walmart_id: str = None, email: str = None, name: str = None):
-    """Walmart SSO login."""
-    import uuid
-    session_token = str(uuid.uuid4())
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    email: str
+    name: str
+
+class User(BaseModel):
+    id: str
+    username: str
+    email: str
+    name: str
+    role: str = "user"
+
+# In-memory user storage (in production, use a database)
+USERS = {}
+SESSIONS = {}
+
+def hash_password(password: str) -> str:
+    """Hash a password using SHA-256."""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def get_user_from_token(session_token: str = None) -> User:
+    """Get user from session token."""
+    if not session_token or session_token not in SESSIONS:
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+    return SESSIONS[session_token]
+
+@app.post("/api/auth/register")
+def register(req: RegisterRequest):
+    """Register a new user with username and password."""
+    if req.username in USERS:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    
+    user_id = secrets.token_hex(8)
+    user = {
+        "id": user_id,
+        "username": req.username,
+        "email": req.email,
+        "name": req.name,
+        "password_hash": hash_password(req.password),
+        "role": "user",
+        "created_at": datetime.now().isoformat()
+    }
+    USERS[req.username] = user
+    
     return {
-        "session_token": session_token,
+        "message": "User registered successfully",
         "user": {
-            "id": walmart_id or "guest",
-            "email": email,
-            "name": name,
+            "id": user_id,
+            "username": req.username,
+            "email": req.email,
+            "name": req.name,
             "role": "user"
         }
     }
 
-@app.post("/api/auth/guest-login")
-def guest_login(email: str = None, name: str = None):
-    """Guest login."""
-    import uuid
-    session_token = str(uuid.uuid4())
+@app.post("/api/auth/login")
+def login(req: LoginRequest):
+    """Traditional username/password login."""
+    if req.username not in USERS:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    user = USERS[req.username]
+    if user["password_hash"] != hash_password(req.password):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    # Generate session token
+    session_token = secrets.token_hex(32)
+    SESSIONS[session_token] = User(
+        id=user["id"],
+        username=user["username"],
+        email=user["email"],
+        name=user["name"],
+        role=user["role"]
+    )
+    
     return {
         "session_token": session_token,
         "user": {
-            "id": "guest",
-            "email": email,
-            "name": name,
-            "role": "guest"
+            "id": user["id"],
+            "username": user["username"],
+            "email": user["email"],
+            "name": user["name"],
+            "role": user["role"]
         }
     }
 
 @app.get("/api/auth/validate")
 def validate_session(session_token: str = None):
     """Validate session token."""
+    if not session_token or session_token not in SESSIONS:
+        return {"valid": False}
+    
+    user = SESSIONS[session_token]
     return {
         "valid": True,
         "user": {
-            "id": "guest",
-            "role": "guest"
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "name": user.name,
+            "role": user.role
         }
     }
 
 @app.post("/api/auth/logout")
 def logout(session_token: str = None):
-    """Logout user."""
+    """Logout user and invalidate session token."""
+    if session_token and session_token in SESSIONS:
+        del SESSIONS[session_token]
+    
     return {"message": "Logged out successfully"}
 
 # ============================================================================
-# FAVORITES ENDPOINTS - STUB
+# FAVORITES, NOTES, INBOX - STUBS
 # ============================================================================
 
 @app.get("/api/favorites")
 def get_favorites(session_token: str = None):
-    """Get user's favorite suppliers."""
     return {"count": 0, "favorites": []}
 
 @app.post("/api/favorites/add")
 def add_favorite(session_token: str = None, supplier_id: int = None, supplier_name: str = None):
-    """Add favorite supplier."""
     return {"message": "Added to favorites", "supplier_id": supplier_id}
 
 @app.post("/api/favorites/remove")
 def remove_favorite(session_token: str = None, supplier_id: int = None):
-    """Remove favorite supplier."""
     return {"message": "Removed from favorites", "supplier_id": supplier_id}
 
 @app.get("/api/favorites/is-favorite")
 def is_favorite(session_token: str = None, supplier_id: int = None):
-    """Check if supplier is favorited."""
-    return {"is_favorite": False, "supplier_id": supplier_id}
-
-# ============================================================================
-# NOTES ENDPOINTS - STUB
-# ============================================================================
+    return {"is_favorite": False}
 
 @app.get("/api/notes")
 def get_notes(session_token: str = None, supplier_id: int = None):
-    """Get user's notes."""
     return {"count": 0, "notes": []}
 
 @app.post("/api/notes/add")
 def add_note(session_token: str = None, supplier_id: int = None, content: str = None):
-    """Add a note."""
     import uuid
     return {"message": "Note added", "note_id": str(uuid.uuid4())}
 
 @app.post("/api/notes/update")
 def update_note(session_token: str = None, note_id: str = None, content: str = None):
-    """Update a note."""
     return {"message": "Note updated", "note_id": note_id}
 
 @app.post("/api/notes/delete")
 def delete_note(session_token: str = None, note_id: str = None):
-    """Delete a note."""
     return {"message": "Note deleted", "note_id": note_id}
-
-# ============================================================================
-# INBOX ENDPOINTS - STUB
-# ============================================================================
 
 @app.get("/api/inbox")
 def get_inbox(session_token: str = None, unread_only: bool = False):
-    """Get user's inbox."""
     return {"count": 0, "unread_count": 0, "messages": []}
 
 @app.post("/api/inbox/mark-read")
 def mark_read(session_token: str = None, message_id: str = None):
-    """Mark message as read."""
-    return {"message": "Marked as read", "message_id": message_id}
+    return {"message": "Marked as read"}
 
 @app.post("/api/inbox/mark-all-read")
 def mark_all_read(session_token: str = None):
-    """Mark all messages as read."""
     return {"message": "All marked as read"}
 
 @app.post("/api/inbox/delete")
 def delete_message(session_token: str = None, message_id: str = None):
-    """Delete a message."""
-    return {"message": "Message deleted", "message_id": message_id}
+    return {"message": "Message deleted"}
 
 @app.get("/api/inbox/unread-count")
 def unread_count(session_token: str = None):
-    """Get unread message count."""
     return {"unread_count": 0}
 
 # ============================================================================
 # SERVE FRONTEND
 # ============================================================================
 
+project_root = Path(__file__).parent
 index_file = project_root / "index.html"
 
 @app.get("/", include_in_schema=False)
 async def serve_root():
     if index_file.exists():
         return FileResponse(index_file, media_type="text/html")
-    return {
-        "message": "Welcome to Supplier Search Engine",
-        "docs_url": "/docs",
-        "suppliers_count": len(ALL_SUPPLIERS)
-    }
+    return {"message": "Welcome to Supplier Search Engine", "docs_url": "/docs"}
 
-# Catch-all for other paths
 @app.get("/{path:path}", include_in_schema=False)
 async def catch_all(path: str):
     # Don't catch API routes
     if path.startswith("api/"):
-        return {"error": f"Endpoint not found: {path}"}
-    # Serve other files from root
+        raise HTTPException(status_code=404, detail="API endpoint not found")
+    
+    # Try to serve the file directly
     file_path = project_root / path
     if file_path.exists() and file_path.is_file():
-        return FileResponse(file_path)
-    # Default to index.html
+        # Determine media type
+        if path.endswith('.html'):
+            return FileResponse(file_path, media_type="text/html")
+        elif path.endswith('.css'):
+            return FileResponse(file_path, media_type="text/css")
+        elif path.endswith('.js'):
+            return FileResponse(file_path, media_type="application/javascript")
+        else:
+            return FileResponse(file_path)
+    
+    # If file not found, try with .html extension
+    if not path.endswith('.html'):
+        html_path = project_root / f"{path}.html"
+        if html_path.exists():
+            return FileResponse(html_path, media_type="text/html")
+    
+    # Default to index.html for client-side routing
     if index_file.exists():
         return FileResponse(index_file, media_type="text/html")
-    return {"error": "Not found"}
+    
+    raise HTTPException(status_code=404, detail=f"File not found: {path}")
 
 if __name__ == "__main__":
     import uvicorn
