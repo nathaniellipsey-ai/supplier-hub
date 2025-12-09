@@ -191,6 +191,20 @@ def get_suppliers(skip: int = 0, limit: int = 100):
         "suppliers": suppliers
     }
 
+@app.get("/api/dashboard/suppliers")
+def get_dashboard_suppliers(skip: int = 0, limit: int = 100):
+    """Get suppliers for dashboard with pagination. (Alias for /api/suppliers)"""
+    total = len(ALL_SUPPLIERS)
+    suppliers = ALL_SUPPLIERS[skip:skip + limit]
+    
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "count": len(suppliers),
+        "suppliers": suppliers
+    }
+
 @app.get("/api/suppliers/{supplier_id}")
 def get_supplier(supplier_id: int):
     """Get a specific supplier by ID."""
@@ -202,6 +216,25 @@ def get_supplier(supplier_id: int):
 @app.get("/api/suppliers/search/query")
 def search(q: str = Query(..., min_length=1), limit: int = 100):
     """Search suppliers by name, category, location, or products."""
+    q_lower = q.lower()
+    results = [
+        s for s in ALL_SUPPLIERS
+        if (
+            q_lower in s.get('name', '').lower() or
+            q_lower in s.get('category', '').lower() or
+            q_lower in s.get('location', '').lower() or
+            any(q_lower in str(p).lower() for p in s.get('products', []))
+        )
+    ]
+    return {
+        "query": q,
+        "count": len(results),
+        "results": results[:limit]
+    }
+
+@app.get("/api/dashboard/suppliers/search")
+def search_dashboard(q: str = Query(..., min_length=1), limit: int = 100):
+    """Search suppliers for dashboard by name, category, location, or products."""
     q_lower = q.lower()
     results = [
         s for s in ALL_SUPPLIERS

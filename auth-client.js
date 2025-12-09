@@ -39,20 +39,26 @@ class AuthClient {
      */
     async loginWithSSO(walmartId, email, name) {
         try {
-            const params = new URLSearchParams({
-                walmart_id: walmartId,
-                email: email,
-                name: name
-            });
-            const response = await fetch(`${API_BASE}/auth/sso?${params}`, {
+            const response = await fetch(`${API_BASE}/auth/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email,
+                    name: name,
+                    walmart_id: walmartId
+                })
             });
 
             if (!response.ok) throw new Error('SSO login failed');
 
             const data = await response.json();
-            this.setSession(data.session_token, data.user);
+            // Map the response to expected format
+            this.setSession(data.session_id, {
+                id: data.user_id,
+                email: email,
+                name: name,
+                walmart_id: walmartId
+            });
             return data;
         } catch (error) {
             console.error('[AuthClient] SSO login error:', error);
@@ -63,21 +69,27 @@ class AuthClient {
     /**
      * Guest login (no SSO)
      */
-    async loginAsGuest(email, name) {
+    async loginAsGuest(email = null, name = null) {
         try {
-            const params = new URLSearchParams({
-                email: email,
-                name: name
-            });
-            const response = await fetch(`${API_BASE}/auth/guest-login?${params}`, {
+            const response = await fetch(`${API_BASE}/auth/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email || `guest_${Date.now()}@supplier-hub.local`,
+                    name: name || 'Guest User',
+                    walmart_id: null
+                })
             });
 
             if (!response.ok) throw new Error('Guest login failed');
 
             const data = await response.json();
-            this.setSession(data.session_token, data.user);
+            // Map the response to expected format
+            this.setSession(data.session_id, {
+                id: data.user_id,
+                email: email || `guest_${Date.now()}@supplier-hub.local`,
+                name: name || 'Guest User'
+            });
             return data;
         } catch (error) {
             console.error('[AuthClient] Guest login error:', error);
