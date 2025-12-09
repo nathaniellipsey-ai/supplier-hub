@@ -61,10 +61,10 @@ if os.path.exists(os.path.dirname(__file__)):
 print("\n" + "="*80)
 print("SUPPLIER SEARCH ENGINE - BACKEND INITIALIZATION")
 print("="*80)
-print("\n🔴 MODE: PRODUCTION (ZERO LOCAL SUPPLIER DATA)")
-print("🔴 STATUS: Ready to receive supplier data")
-print("🔴 IMPORTANT: No suppliers loaded at startup")
-print("🔴 ACTION: Import suppliers via CSV or API")
+print("\n[PRODUCTION] MODE: ZERO LOCAL SUPPLIER DATA")
+print("[OK] STATUS: Ready to receive supplier data")
+print("[IMPORTANT] No suppliers loaded at startup")
+print("[ACTION] Import suppliers via CSV or API")
 print("\n" + "="*80 + "\n")
 
 # ZERO LOCAL DATA - EMPTY DICTIONARIES
@@ -74,18 +74,26 @@ USER_NOTES: Dict[str, Dict[str, Dict]] = {}  # {user_id: {supplier_id: note_data
 USER_SESSIONS: Dict[str, Dict[str, Any]] = {}  # {session_id: session_data}
 USER_INBOX: Dict[str, List[Dict]] = {}  # {user_id: [messages]}
 
-logger.info("🔴 Backend initialized with ZERO suppliers (no local data generation)")
-logger.info(f"Total suppliers in memory: {len(ALL_SUPPLIERS)}")
+logger.info("[PRODUCTION] Backend initialized with ZERO suppliers (no local data generation)")
+logger.info(f"[STATUS] Total suppliers in memory: {len(ALL_SUPPLIERS)}")
 
 # ============================================================================
 # AUTHENTICATION ENDPOINTS
 # ============================================================================
 
 @app.post("/api/auth/login")
-async def login(email: str = Form(...), name: str = Form(...), walmart_id: Optional[str] = Form(None)):
-    """User login endpoint."""
+async def login(data: dict):
+    """User login endpoint - accepts JSON data."""
     try:
         import uuid
+        email = str(data.get("email", "")).strip()
+        name = str(data.get("name", "")).strip()
+        walmart_id_raw = data.get("walmart_id")
+        walmart_id = str(walmart_id_raw).strip() if walmart_id_raw else None
+        
+        if not email or not name:
+            raise HTTPException(status_code=400, detail="Email and name are required")
+        
         session_id = str(uuid.uuid4())
         user_id = f"user_{session_id[:8]}"
         
@@ -93,10 +101,12 @@ async def login(email: str = Form(...), name: str = Form(...), walmart_id: Optio
             "user_id": user_id,
             "email": email,
             "name": name,
-            "walmart_id": walmart_id,
+            "walmart_id": walmart_id if walmart_id else None,
             "login_time": datetime.now().isoformat(),
             "sso_provider": "walmart" if walmart_id else "guest"
         }
+        
+        logger.info(f"[LOGIN] User logged in: {email}")
         
         return {
             "success": True,
@@ -104,9 +114,11 @@ async def login(email: str = Form(...), name: str = Form(...), walmart_id: Optio
             "user_id": user_id,
             "message": f"Welcome {name}!"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Login error: {e}")
-        raise HTTPException(status_code=400, detail="Login failed")
+        raise HTTPException(status_code=400, detail=f"Login failed: {str(e)}")
 
 @app.post("/api/auth/sso/walmart")
 async def walmart_sso_login(code: str = Query(...)):
@@ -192,8 +204,8 @@ async def import_suppliers(file: UploadFile = File(...), user_id: str = "default
             except Exception as e:
                 errors.append(f"Row error: {str(e)}")
         
-        logger.info(f"✅ Imported {imported_count} suppliers")
-        logger.info(f"📊 Total suppliers now: {len(ALL_SUPPLIERS)}")
+        logger.info(f"[IMPORT] Imported {imported_count} suppliers")
+        logger.info(f"[STATUS] Total suppliers now: {len(ALL_SUPPLIERS)}")
         
         return {
             "success": True,
@@ -207,47 +219,62 @@ async def import_suppliers(file: UploadFile = File(...), user_id: str = "default
         raise HTTPException(status_code=400, detail=f"Import failed: {str(e)}")
 
 @app.post("/api/suppliers/add")
-async def add_supplier(data: dict):
+async def add_supplier(request_body: dict = None):
     """Add a single supplier."""
     try:
+        if request_body is None:
+            raise HTTPException(status_code=400, detail="Request body is required")
+        
+        # Validate required fields
+        name = request_body.get("name", "").strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Supplier name is required")
+        
         supplier_id = max(ALL_SUPPLIERS.keys()) + 1 if ALL_SUPPLIERS else 1
         
         supplier = {
             "id": supplier_id,
-            **data,
+            **request_body,
             "created_at": datetime.now().isoformat()
         }
         
         ALL_SUPPLIERS[supplier_id] = supplier
-        logger.info(f"✅ Added supplier: {supplier['name']} (ID: {supplier_id})")
+        logger.info(f"[ADD] Added supplier: {name} (ID: {supplier_id})")
         
         return {
             "success": True,
             "supplier_id": supplier_id,
             "message": "Supplier added successfully"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Add supplier error: {e}")
         raise HTTPException(status_code=400, detail=f"Failed to add supplier: {str(e)}")
 
 @app.put("/api/suppliers/{supplier_id}")
-async def edit_supplier(supplier_id: int, data: dict):
+async def edit_supplier(supplier_id: int, request_body: dict = None):
     """Edit an existing supplier."""
     if supplier_id not in ALL_SUPPLIERS:
         raise HTTPException(status_code=404, detail="Supplier not found")
     
     try:
+        if request_body is None:
+            raise HTTPException(status_code=400, detail="Request body is required")
+        
         ALL_SUPPLIERS[supplier_id].update({
-            **data,
+            **request_body,
             "updated_at": datetime.now().isoformat()
         })
-        logger.info(f"✅ Updated supplier: {ALL_SUPPLIERS[supplier_id]['name']}")
+        logger.info(f"[UPDATE] Updated supplier: {ALL_SUPPLIERS[supplier_id]['name']}")
         
         return {
             "success": True,
             "supplier_id": supplier_id,
             "message": "Supplier updated successfully"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Edit supplier error: {e}")
         raise HTTPException(status_code=400, detail=f"Failed to edit supplier: {str(e)}")
@@ -260,7 +287,7 @@ async def delete_supplier(supplier_id: int):
     
     supplier_name = ALL_SUPPLIERS[supplier_id].get("name", "Unknown")
     del ALL_SUPPLIERS[supplier_id]
-    logger.info(f"❌ Deleted supplier: {supplier_name}")
+    logger.info(f"[DELETE] Deleted supplier: {supplier_name}")
     
     return {"success": True, "message": "Supplier deleted"}
 

@@ -1,0 +1,166 @@
+================================================================================
+                     SUPPLIER HUB v4.0 - QUICK START
+================================================================================
+
+🚀 START THE SERVER
+
+    cd "C:\Users\n0l08i7\Desktop\New folder\supplier-hub"
+    python -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+
+🌐 OPEN IN BROWSER
+
+    http://localhost:8000
+
+
+📝 LOGIN
+
+    Option 1: Email + Name login
+    - Enter email: your@email.com
+    - Enter name: Your Name
+    - Click "Login"
+
+    Option 2: Walmart SSO
+    - Click "Login with Walmart SSO" button
+
+    Option 3: Guest login
+    - Click "Continue as Guest"
+
+
+📊 IMPORT SUPPLIERS
+
+    Create a file called suppliers.csv:
+
+    id,name,category,location,region,rating,aiScore,products,certifications,walmartVerified,yearsInBusiness,projectsCompleted
+    1,Premier Steel Inc.,Steel & Metal,Chicago IL,Midwest,4.8,85,Steel Beams;Rebar,ISO 9001,True,25,1200
+    2,Hardware Pro,Hardware & Fasteners,Dallas TX,Southwest,4.5,80,Nails;Screws;Bolts,UL Listed,True,15,800
+
+    Then upload via the dashboard or use curl:
+
+    curl -X POST -F "file=@suppliers.csv" http://localhost:8000/api/suppliers/import
+
+
+✨ FEATURES TO TEST
+
+    ✅ Login page with Walmart SSO
+    ✅ Search suppliers by name
+    ✅ Filter by Hardware & Fixtures
+    ✅ Filter by Walmart Verified
+    ✅ Add supplier
+    ✅ Edit supplier
+    ✅ Delete supplier
+    ✅ Add favorites
+    ✅ Add notes
+    ✅ AI Chatbot
+    ✅ Help page (filterable/sortable)
+    ✅ All pages with new Walmart colors
+
+
+🎨 COLORS
+
+    Bentonville Blue:   #001e60 (dark headers)
+    Everyday Blue:      #4dbdf5 (accents)
+    Sky Blue:           #a9ddf7 (light bg)
+    Yellow:             #ffc220 (highlights)
+    White:              #ffffff (background)
+
+
+📚 DOCUMENTATION
+
+    /docs              - OpenAPI documentation
+    /redoc             - ReDoc documentation
+    help.html          - In-app help (filterable)
+
+
+🔍 TEST ENDPOINTS
+
+    Login:
+    POST http://localhost:8000/api/auth/login
+    {
+        "email": "test@example.com",
+        "name": "Test User",
+        "walmart_id": null
+    }
+
+    Add Supplier:
+    POST http://localhost:8000/api/suppliers/add
+    {
+        "name": "New Supplier",
+        "category": "Hardware",
+        "location": "Dallas TX",
+        "region": "Southwest",
+        "rating": 4.5,
+        "aiScore": 80,
+        "products": ["Nails", "Screws"],
+        "certifications": ["UL Listed"],
+        "walmartVerified": true,
+        "yearsInBusiness": 10,
+        "projectsCompleted": 500
+    }
+
+    Get Suppliers:
+    GET http://localhost:8000/api/suppliers
+    GET http://localhost:8000/api/suppliers?fixtures_hardware=true
+    GET http://localhost:8000/api/suppliers?category=Hardware
+    GET http://localhost:8000/api/suppliers?location=texas
+
+    Chat with AI:
+    POST http://localhost:8000/api/chatbot/message
+    {
+        "message": "Find me suppliers in Texas",
+        "user_id": "default"
+    }
+
+
+📋 DATABASE STATUS
+
+    Starts with ZERO suppliers
+    In-memory storage (RAM)
+    Lost on server restart
+    To persist: Add database integration
+
+
+🆘 TROUBLESHOOTING
+
+    Q: Getting 422 error?
+    A: Restart the server. API expects JSON format.
+
+    Q: No suppliers showing?
+    A: This is expected! Import suppliers first via CSV.
+
+    Q: Login not working?
+    A: Check browser console for errors. Clear cache.
+
+    Q: Chatbot not responding?
+    A: Chatbot is basic NLP. Try: "Find suppliers in Texas"
+
+    Q: Filters not working?
+    A: Import suppliers first, then use filters.
+
+
+📞 API DOCUMENTATION
+
+    Full API docs available at: http://localhost:8000/docs
+
+    24 endpoints total:
+    - 4 Auth endpoints
+    - 7 Supplier endpoints
+    - 3 Favorites endpoints
+    - 4 Notes endpoints
+    - 4 Inbox endpoints
+    - 1 Chatbot endpoint
+    - 1 Dashboard endpoint
+
+
+🚀 READY TO DEPLOY?
+
+    1. Push to GitHub
+    2. Go to render.com
+    3. Connect repository
+    4. It will auto-deploy
+    5. Set PORT=8000 environment variable
+
+
+================================================================================
+                            HAVE FUN! 🐶
+================================================================================"

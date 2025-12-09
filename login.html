@@ -316,14 +316,16 @@
             showLoading(true);
             
             try {
-                const formData = new FormData();
-                formData.append('email', email);
-                formData.append('name', name);
-                if (walmartId) formData.append('walmart_id', walmartId);
-                
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        name: name,
+                        walmart_id: walmartId || null
+                    })
                 });
                 
                 if (!response.ok) {
@@ -362,13 +364,16 @@
             showLoading(true);
             
             try {
-                const formData = new FormData();
-                formData.append('email', `guest_${Date.now()}@supplier-hub.local`);
-                formData.append('name', 'Guest User');
-                
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: `guest_${Date.now()}@supplier-hub.local`,
+                        name: 'Guest User',
+                        walmart_id: null
+                    })
                 });
                 
                 if (!response.ok) {
