@@ -295,30 +295,46 @@
         </div>
     </div>
     
-    <script src="js/auth-client.js"></script>
     <script>
+        // Simple API client for notes
+        const API_BASE = '/api';
+        
         let currentEditNoteId = null;
+        
+        async function getNotes() {
+            const response = await fetch(`${API_BASE}/notes`);
+            if (!response.ok) throw new Error('Failed to fetch notes');
+            return response.json();
+        }
+        
+        async function addNote(supplierId, content) {
+            const params = new URLSearchParams({ supplier_id: supplierId, content });
+            const response = await fetch(`${API_BASE}/notes/add?${params}`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to add note');
+            return response.json();
+        }
+        
+        async function updateNote(noteId, content) {
+            const params = new URLSearchParams({ note_id: noteId, content });
+            const response = await fetch(`${API_BASE}/notes/update?${params}`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to update note');
+            return response.json();
+        }
+        
+        async function deleteNote(noteId) {
+            const params = new URLSearchParams({ note_id: noteId });
+            const response = await fetch(`${API_BASE}/notes/delete?${params}`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to delete note');
+            return response.json();
+        }
         
         async function loadNotes() {
             const container = document.getElementById('notes-container');
             
-            if (!authClient.isAuthenticated) {
-                container.innerHTML = `
-                    <div class="no-notes">
-                        <div class="no-notes-icon">🔐</div>
-                        <h3>Not Logged In</h3>
-                        <p>Please login to view your notes.</p>
-                        <br>
-                        <a href="index.html" class="back-btn">Back to Dashboard</a>
-                    </div>
-                `;
-                return;
-            }
-            
             container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
             
             try {
-                const result = await authClient.getNotes();
+                const result = await getNotes();
                 
                 if (result.count === 0) {
                     container.innerHTML = `
@@ -345,7 +361,7 @@
                         </div>
                         <div class="note-actions">
                             <button class="action-btn" onclick="openEditModal('${note.id}', ${note.supplier_id})">Edit</button>
-                            <button class="action-btn danger" onclick="deleteNote('${note.id}')">Delete</button>
+                            <button class="action-btn danger" onclick="deleteNoteHandler('${note.id}')">Delete</button>
                         </div>
                     </div>
                 `).join('');
@@ -390,7 +406,7 @@
             }
             
             try {
-                await authClient.updateNote(currentEditNoteId, content);
+                await updateNote(currentEditNoteId, content);
                 closeEditModal();
                 loadNotes();
             } catch (error) {
@@ -398,10 +414,10 @@
             }
         }
         
-        async function deleteNote(noteId) {
+        async function deleteNoteHandler(noteId) {
             if (confirm('Delete this note?')) {
                 try {
-                    await authClient.deleteNote(noteId);
+                    await deleteNote(noteId);
                     loadNotes();
                 } catch (error) {
                     alert('Error: ' + error.message);

@@ -238,28 +238,43 @@
         </div>
     </div>
     
-    <script src="js/auth-client.js"></script>
     <script>
+        // Simple API client for inbox
+        const API_BASE = '/api';
+        
+        async function getInbox() {
+            const response = await fetch(`${API_BASE}/inbox`);
+            if (!response.ok) throw new Error('Failed to fetch inbox');
+            return response.json();
+        }
+        
+        async function markRead(messageId) {
+            const params = new URLSearchParams({ message_id: messageId });
+            const response = await fetch(`${API_BASE}/inbox/mark-read?${params}`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to mark as read');
+            return response.json();
+        }
+        
+        async function markAllAsRead() {
+            const response = await fetch(`${API_BASE}/inbox/mark-all-read`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to mark all as read');
+            loadInbox();
+        }
+        
+        async function deleteMessage(messageId) {
+            const params = new URLSearchParams({ message_id: messageId });
+            const response = await fetch(`${API_BASE}/inbox/delete?${params}`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to delete message');
+            return response.json();
+        }
+        
         async function loadInbox() {
             const container = document.getElementById('messages-container');
-            
-            if (!authClient.isAuthenticated) {
-                container.innerHTML = `
-                    <div class="no-messages">
-                        <div class="no-messages-icon">🔐</div>
-                        <h3>Not Logged In</h3>
-                        <p>Please login to view your inbox.</p>
-                        <br>
-                        <a href="index.html" class="back-btn">Back to Dashboard</a>
-                    </div>
-                `;
-                return;
-            }
             
             container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
             
             try {
-                const inbox = await authClient.getInbox();
+                const inbox = await getInbox();
                 
                 if (inbox.count === 0) {
                     container.innerHTML = `
@@ -285,8 +300,8 @@
                         </div>
                         <div class="message-content">${msg.message}</div>
                         <div class="message-actions">
-                            ${!msg.read ? `<button class="action-btn" onclick="markAsRead('${msg.id}')">Mark as Read</button>` : ''}
-                            <button class="action-btn" onclick="deleteMessage('${msg.id}')">Delete</button>
+                            ${!msg.read ? `<button class="action-btn" onclick="markAsReadHandler('${msg.id}')">Mark as Read</button>` : ''}
+                            <button class="action-btn" onclick="deleteMessageHandler('${msg.id}')">Delete</button>
                         </div>
                     </div>
                 `).join('');
@@ -303,28 +318,19 @@
             }
         }
         
-        async function markAsRead(messageId) {
+        async function markAsReadHandler(messageId) {
             try {
-                await authClient.markAsRead(messageId);
+                await markRead(messageId);
                 loadInbox();
             } catch (error) {
                 alert('Error: ' + error.message);
             }
         }
         
-        async function markAllAsRead() {
-            try {
-                await authClient.markAllAsRead();
-                loadInbox();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-        
-        async function deleteMessage(messageId) {
+        async function deleteMessageHandler(messageId) {
             if (confirm('Delete this message?')) {
                 try {
-                    await authClient.deleteMessage(messageId);
+                    await deleteMessage(messageId);
                     loadInbox();
                 } catch (error) {
                     alert('Error: ' + error.message);

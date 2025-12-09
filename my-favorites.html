@@ -188,33 +188,35 @@
         </div>
     </div>
     
-    <script src="js/auth-client.js"></script>
     <script>
+        // Simple API client for favorites
+        const API_BASE = '/api';
+        
+        async function getFavorites() {
+            const response = await fetch(`${API_BASE}/favorites`);
+            if (!response.ok) throw new Error('Failed to fetch favorites');
+            return response.json();
+        }
+        
+        async function removeFavorite(supplierId) {
+            const params = new URLSearchParams({ supplier_id: supplierId });
+            const response = await fetch(`${API_BASE}/favorites/remove?${params}`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to remove favorite');
+            return response.json();
+        }
+        
         async function loadFavorites() {
             const container = document.getElementById('favorites-container');
-            
-            if (!authClient.isAuthenticated) {
-                container.innerHTML = `
-                    <div class="no-favorites">
-                        <div class="no-favorites-icon">🔐</div>
-                        <h3>Not Logged In</h3>
-                        <p>Please login to view your favorites.</p>
-                        <br>
-                        <a href="index.html" class="back-btn">Back to Dashboard</a>
-                    </div>
-                `;
-                return;
-            }
             
             container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
             
             try {
-                const result = await authClient.getFavorites();
+                const result = await getFavorites();
                 
                 if (result.count === 0) {
                     container.innerHTML = `
                         <div class="no-favorites">
-                            <div class="no-favorites-icon">★</div>
+                            <div class="no-favorites-icon">⭐</div>
                             <h3>No Favorites Yet</h3>
                             <p>Start adding suppliers to your favorites!</p>
                             <br>
@@ -226,11 +228,10 @@
                 
                 const html = result.favorites.map(fav => `
                     <div class="favorite-card">
-                        <div class="favorite-name">${fav.supplier_name}</div>
-                        <div class="favorite-date">Added: ${formatDate(fav.created_at)}</div>
+                        <div class="favorite-name">${fav.supplier_name || fav.name}</div>
+                        <div class="favorite-date">Added</div>
                         <div class="favorite-actions">
-                            <button class="action-btn" onclick="openSupplier(${fav.supplier_id})">View</button>
-                            <button class="action-btn danger" onclick="removeFavorite(${fav.supplier_id})">Remove</button>
+                            <button class="action-btn" onclick="removeFavoriteHandler(${fav.supplier_id})">Remove</button>
                         </div>
                     </div>
                 `).join('');
@@ -247,20 +248,15 @@
             }
         }
         
-        async function removeFavorite(supplierId) {
+        async function removeFavoriteHandler(supplierId) {
             if (confirm('Remove from favorites?')) {
                 try {
-                    await authClient.removeFavorite(supplierId);
+                    await removeFavorite(supplierId);
                     loadFavorites();
                 } catch (error) {
                     alert('Error: ' + error.message);
                 }
             }
-        }
-        
-        function openSupplier(supplierId) {
-            // Redirect back to dashboard and open the supplier modal
-            window.location.href = `index.html?supplier=${supplierId}`;
         }
         
         function formatDate(dateString) {
