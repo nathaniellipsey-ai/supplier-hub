@@ -2750,20 +2750,22 @@ async function searchSuppliersFromAPI(query) {
             });
             // Categories - show first 10, rest hidden
             const categoryContainer = document.getElementById('categoryFilters');
-            const allCategories = Object.keys(productCategories);
+            const allCategories = [...new Set(allSuppliers.map(s => s.category))].sort();
             const initialCategoryCount = 10;
             
+            let categoryHTML = '';
             allCategories.forEach((cat, index) => {
                 const count = allSuppliers.filter(s => s.category === cat).length;
                 const isHidden = index >= initialCategoryCount;
-                categoryContainer.innerHTML += `
+                categoryHTML += `
                     <div class="filter-option ${isHidden ? 'hidden-category' : ''}">
-                        <input type="checkbox" id="cat-${cat}" value="${cat}" class="category-filter">
-                        <label for="cat-${cat}">${cat}</label>
+                        <input type="checkbox" id="cat-${cat.replace(/[^a-zA-Z0-9]/g, '')}" value="${cat}" class="category-filter">
+                        <label for="cat-${cat.replace(/[^a-zA-Z0-9]/g, '')}">${cat}</label>
                         <span class="filter-count">(${count})</span>
                     </div>
                 `;
             });
+            categoryContainer.innerHTML = categoryHTML;
             
             if (allCategories.length > initialCategoryCount) {
                 categoryContainer.innerHTML += `
@@ -2772,27 +2774,41 @@ async function searchSuppliersFromAPI(query) {
                     </div>
                 `;
             }
-
-            // Product Types - show top products from general categories
-            const productContainer = document.getElementById('productTypeFilters');
-            const generalCategories = ['Concrete & Cement', 'Steel & Metal', 'Lumber & Wood', 'Roofing Materials', 'Insulation'];
-            const generalProducts = [];
-            generalCategories.forEach(cat => {
-                if (productCategories[cat]) {
-                    generalProducts.push(...productCategories[cat].slice(0, 3));
-                }
+            
+            // Attach event listeners to category filters
+            document.querySelectorAll('.category-filter').forEach(cb => {
+                cb.addEventListener('change', applyFilters);
             });
-            generalProducts.forEach(prod => {
-                const count = allSuppliers.filter(s => s.products.includes(prod)).length;
-                if (count > 0) {
-                    productContainer.innerHTML += `
-                        <div class="filter-option">
-                            <input type="checkbox" id="prod-${prod}" value="${prod}" class="product-filter">
-                            <label for="prod-${prod}">${prod}</label>
-                            <span class="filter-count">(${count})</span>
-                        </div>
-                    `;
-                }
+
+            // Product Types - get all unique products from suppliers
+            const productContainer = document.getElementById('productTypeFilters');
+            const allProducts = {};
+            allSuppliers.forEach(supplier => {
+                supplier.products.forEach(prod => {
+                    allProducts[prod] = (allProducts[prod] || 0) + 1;
+                });
+            });
+            
+            // Sort by count descending, show top 20
+            const sortedProducts = Object.entries(allProducts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 20);
+            
+            let productHTML = '';
+            sortedProducts.forEach(([prod, count]) => {
+                productHTML += `
+                    <div class="filter-option">
+                        <input type="checkbox" id="prod-${prod.replace(/[^a-zA-Z0-9]/g, '')}" value="${prod}" class="product-filter">
+                        <label for="prod-${prod.replace(/[^a-zA-Z0-9]/g, '')}">${prod}</label>
+                        <span class="filter-count">(${count})</span>
+                    </div>
+                `;
+            });
+            productContainer.innerHTML = productHTML;
+            
+            // Attach event listeners
+            document.querySelectorAll('.product-filter').forEach(cb => {
+                cb.addEventListener('change', applyFilters);
             });
 
             // Fixtures & Hardware - organized by subcategory
@@ -2849,17 +2865,26 @@ async function searchSuppliersFromAPI(query) {
                 }
             });
 
-            // Regions
+            // Regions - get unique regions from suppliers
             const regionContainer = document.getElementById('regionFilters');
-            regions.forEach(reg => {
+            const uniqueRegions = [...new Set(allSuppliers.map(s => s.region))].sort();
+            
+            let regionHTML = '';
+            uniqueRegions.forEach(reg => {
                 const count = allSuppliers.filter(s => s.region === reg).length;
-                regionContainer.innerHTML += `
+                regionHTML += `
                     <div class="filter-option">
-                        <input type="checkbox" id="reg-${reg}" value="${reg}" class="region-filter">
-                        <label for="reg-${reg}">${reg}</label>
+                        <input type="checkbox" id="reg-${reg.replace(/[^a-zA-Z0-9]/g, '')}" value="${reg}" class="region-filter">
+                        <label for="reg-${reg.replace(/[^a-zA-Z0-9]/g, '')}">${reg}</label>
                         <span class="filter-count">(${count})</span>
                     </div>
                 `;
+            });
+            regionContainer.innerHTML = regionHTML;
+            
+            // Attach event listeners
+            document.querySelectorAll('.region-filter').forEach(cb => {
+                cb.addEventListener('change', applyFilters);
             });
 
             // Certifications
