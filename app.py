@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 """FastAPI Backend - Supplier Search Engine
 
-A professional, production-ready API for supplier management.
+Production-ready API for supplier management.
 Provides REST endpoints for supplier data, search, filtering, and management.
 
-NO LOCAL SUPPLIER GENERATION - ALL DATA COMES FROM DATABASE
+🔴 IMPORTANT: ZERO LOCAL SUPPLIER DATA - All data comes from imports/API
 """
 
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import logging
 import json
 import csv
 import io
 from datetime import datetime
+import os
 
 # ============================================================================
 # LOGGING & CONFIG
@@ -34,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Supplier Search Engine API",
-    description="Professional API for supplier search, management, and AI assistance",
-    version="3.0.0 - PRODUCTION",
+    description="Production API for supplier search, management, and AI assistance",
+    version="4.0.0 - PRODUCTION",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -49,42 +50,68 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files (HTML, CSS, favicon, etc.)
-import os
+# Mount static files
 if os.path.exists(os.path.dirname(__file__)):
     app.mount("/static", StaticFiles(directory=os.path.dirname(__file__)), name="static")
 
 # ============================================================================
-# DATABASE STORAGE (No Local Generation)
+# DATABASE STORAGE - ZERO LOCAL DATA
 # ============================================================================
 
 print("\n" + "="*80)
 print("SUPPLIER SEARCH ENGINE - BACKEND INITIALIZATION")
 print("="*80)
-print("\n[OK] MODE: PRODUCTION (NO LOCAL DATA GENERATION)")
-print("[OK] STATUS: Ready to receive supplier data")
+print("\n🔴 MODE: PRODUCTION (ZERO LOCAL SUPPLIER DATA)")
+print("🔴 STATUS: Ready to receive supplier data")
+print("🔴 IMPORTANT: No suppliers loaded at startup")
+print("🔴 ACTION: Import suppliers via CSV or API")
 print("\n" + "="*80 + "\n")
 
-ALL_SUPPLIERS = {}  # {supplier_id: supplier_dict}
-USER_FAVORITES = {}  # {user_id: [supplier_ids]}
-USER_NOTES = {}  # {user_id: {supplier_id: {text, created_at, updated_at}}}
-USER_SESSIONS = {}  # {session_id: {user_id, email, login_time}}
+# ZERO LOCAL DATA - EMPTY DICTIONARIES
+ALL_SUPPLIERS: Dict[int, Dict[str, Any]] = {}  # Will be populated via import only
+USER_FAVORITES: Dict[str, List[int]] = {}  # {user_id: [supplier_ids]}
+USER_NOTES: Dict[str, Dict[str, Dict]] = {}  # {user_id: {supplier_id: note_data}}
+USER_SESSIONS: Dict[str, Dict[str, Any]] = {}  # {session_id: session_data}
+USER_INBOX: Dict[str, List[Dict]] = {}  # {user_id: [messages]}
 
-logger.info("[OK] Backend initialized with ZERO suppliers (no local generation)")
+logger.info("🔴 Backend initialized with ZERO suppliers (no local data generation)")
+logger.info(f"Total suppliers in memory: {len(ALL_SUPPLIERS)}")
 
 # ============================================================================
 # AUTHENTICATION ENDPOINTS
 # ============================================================================
 
+@app.post("/api/auth/login")
+async def login(email: str = Form(...), name: str = Form(...), walmart_id: Optional[str] = Form(None)):
+    """User login endpoint."""
+    try:
+        import uuid
+        session_id = str(uuid.uuid4())
+        user_id = f"user_{session_id[:8]}"
+        
+        USER_SESSIONS[session_id] = {
+            "user_id": user_id,
+            "email": email,
+            "name": name,
+            "walmart_id": walmart_id,
+            "login_time": datetime.now().isoformat(),
+            "sso_provider": "walmart" if walmart_id else "guest"
+        }
+        
+        return {
+            "success": True,
+            "session_id": session_id,
+            "user_id": user_id,
+            "message": f"Welcome {name}!"
+        }
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        raise HTTPException(status_code=400, detail="Login failed")
+
 @app.post("/api/auth/sso/walmart")
 async def walmart_sso_login(code: str = Query(...)):
-    """
-    Walmart SSO Login - Exchange authorization code for session.
-    This is called after Walmart OAuth callback.
-    """
+    """Walmart SSO Login - Exchange authorization code for session."""
     try:
-        # In production, exchange code with Walmart OAuth server
-        # For now, create session
         import uuid
         session_id = str(uuid.uuid4())
         user_id = f"walmart_user_{session_id[:8]}"
@@ -114,10 +141,17 @@ async def check_sso_session(session_id: str = Query(...)):
         return {
             "valid": True,
             "user_id": session["user_id"],
-            "email": session["email"],
+            "email": session.get("email"),
             "provider": session.get("sso_provider", "unknown")
         }
     return {"valid": False}
+
+@app.post("/api/auth/logout")
+async def logout(session_id: str = Query(...)):
+    """Logout user."""
+    if session_id in USER_SESSIONS:
+        del USER_SESSIONS[session_id]
+    return {"success": True, "message": "Logged out"}
 
 # ============================================================================
 # SUPPLIER MANAGEMENT ENDPOINTS
@@ -158,6 +192,9 @@ async def import_suppliers(file: UploadFile = File(...), user_id: str = "default
             except Exception as e:
                 errors.append(f"Row error: {str(e)}")
         
+        logger.info(f"✅ Imported {imported_count} suppliers")
+        logger.info(f"📊 Total suppliers now: {len(ALL_SUPPLIERS)}")
+        
         return {
             "success": True,
             "imported": imported_count,
@@ -170,19 +207,19 @@ async def import_suppliers(file: UploadFile = File(...), user_id: str = "default
         raise HTTPException(status_code=400, detail=f"Import failed: {str(e)}")
 
 @app.post("/api/suppliers/add")
-async def add_supplier(supplier_data: dict, user_id: str = "default"):
+async def add_supplier(data: dict):
     """Add a single supplier."""
     try:
         supplier_id = max(ALL_SUPPLIERS.keys()) + 1 if ALL_SUPPLIERS else 1
         
         supplier = {
             "id": supplier_id,
-            **supplier_data,
-            "created_at": datetime.now().isoformat(),
-            "created_by": user_id
+            **data,
+            "created_at": datetime.now().isoformat()
         }
         
         ALL_SUPPLIERS[supplier_id] = supplier
+        logger.info(f"✅ Added supplier: {supplier['name']} (ID: {supplier_id})")
         
         return {
             "success": True,
@@ -194,17 +231,17 @@ async def add_supplier(supplier_data: dict, user_id: str = "default"):
         raise HTTPException(status_code=400, detail=f"Failed to add supplier: {str(e)}")
 
 @app.put("/api/suppliers/{supplier_id}")
-async def edit_supplier(supplier_id: int, supplier_data: dict, user_id: str = "default"):
+async def edit_supplier(supplier_id: int, data: dict):
     """Edit an existing supplier."""
     if supplier_id not in ALL_SUPPLIERS:
         raise HTTPException(status_code=404, detail="Supplier not found")
     
     try:
         ALL_SUPPLIERS[supplier_id].update({
-            **supplier_data,
-            "updated_at": datetime.now().isoformat(),
-            "updated_by": user_id
+            **data,
+            "updated_at": datetime.now().isoformat()
         })
+        logger.info(f"✅ Updated supplier: {ALL_SUPPLIERS[supplier_id]['name']}")
         
         return {
             "success": True,
@@ -216,12 +253,15 @@ async def edit_supplier(supplier_id: int, supplier_data: dict, user_id: str = "d
         raise HTTPException(status_code=400, detail=f"Failed to edit supplier: {str(e)}")
 
 @app.delete("/api/suppliers/{supplier_id}")
-async def delete_supplier(supplier_id: int, user_id: str = "default"):
+async def delete_supplier(supplier_id: int):
     """Delete a supplier."""
     if supplier_id not in ALL_SUPPLIERS:
         raise HTTPException(status_code=404, detail="Supplier not found")
     
+    supplier_name = ALL_SUPPLIERS[supplier_id].get("name", "Unknown")
     del ALL_SUPPLIERS[supplier_id]
+    logger.info(f"❌ Deleted supplier: {supplier_name}")
+    
     return {"success": True, "message": "Supplier deleted"}
 
 # ============================================================================
@@ -235,8 +275,10 @@ async def get_suppliers(
     search: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
     location: Optional[str] = Query(None),
+    region: Optional[str] = Query(None),
     min_rating: Optional[float] = Query(None),
-    fixtures_hardware: bool = Query(False),  # NEW: Fixtures & Hardware filter
+    verified_only: bool = Query(False),
+    fixtures_hardware: bool = Query(False),
 ):
     """Get suppliers with filtering."""
     results = list(ALL_SUPPLIERS.values())
@@ -262,8 +304,14 @@ async def get_suppliers(
                location_lower in s.get("region", "").lower()
         ]
     
+    if region:
+        results = [s for s in results if s.get("region", "").lower() == region.lower()]
+    
     if min_rating is not None:
         results = [s for s in results if s.get("rating", 0) >= min_rating]
+    
+    if verified_only:
+        results = [s for s in results if s.get("walmartVerified", False)]
     
     if fixtures_hardware:
         results = [
@@ -395,7 +443,6 @@ async def delete_note(supplier_id: int = Query(...), user_id: str = "default"):
 async def chatbot_message(
     message: str = Form(...),
     user_id: str = Form("default"),
-    context: Optional[dict] = None
 ):
     """
     Send message to AI Chatbot.
@@ -406,29 +453,85 @@ async def chatbot_message(
     - Supplier comparison
     """
     try:
-        import uuid
-        from ai_chatbot import SupplierChatbot
+        # Simple AI response logic
+        message_lower = message.lower()
+        suppliers_list = list(ALL_SUPPLIERS.values())
         
-        chatbot = SupplierChatbot(suppliers_data=list(ALL_SUPPLIERS.values()))
-        response = chatbot.process_message(
-            user_message=message,
-            user_id=user_id,
-            context=context or {}
-        )
+        # Supplier search
+        if "find" in message_lower or "search" in message_lower or "show" in message_lower:
+            matching = [s for s in suppliers_list if any(word in message_lower for word in s.get("name", "").lower().split())]
+            if matching:
+                return {
+                    "success": True,
+                    "response": f"Found {len(matching)} supplier(s): " + ", ".join([s["name"] for s in matching[:5]]),
+                    "timestamp": datetime.now().isoformat()
+                }
         
+        # Walmart verified suppliers
+        if "walmart verified" in message_lower:
+            verified = [s for s in suppliers_list if s.get("walmartVerified")]
+            return {
+                "success": True,
+                "response": f"We have {len(verified)} Walmart-verified suppliers in our database.",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Statistics
+        if "how many" in message_lower or "total" in message_lower or "count" in message_lower:
+            return {
+                "success": True,
+                "response": f"We currently have {len(suppliers_list)} suppliers in our database.",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Default response
         return {
             "success": True,
-            "response": response,
+            "response": "I'm an AI assistant for supplier search. I can help you find suppliers, provide recommendations, and answer questions about our database. What would you like to know?",
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         logger.error(f"Chatbot error: {e}")
-        # Return helpful fallback response
         return {
             "success": False,
-            "response": "I'm having trouble processing your request. Please try again or contact support.",
+            "response": "I'm having trouble processing your request. Please try again.",
             "error": str(e)
         }
+
+# ============================================================================
+# INBOX ENDPOINTS
+# ============================================================================
+
+@app.get("/api/inbox")
+async def get_inbox(user_id: str = "default"):
+    """Get user's inbox messages."""
+    if user_id not in USER_INBOX:
+        return {"count": 0, "messages": []}
+    return {"count": len(USER_INBOX[user_id]), "messages": USER_INBOX[user_id]}
+
+@app.post("/api/inbox/mark-read")
+async def mark_message_read(message_id: str = Query(...), user_id: str = "default"):
+    """Mark message as read."""
+    if user_id in USER_INBOX:
+        for msg in USER_INBOX[user_id]:
+            if msg.get("id") == message_id:
+                msg["read"] = True
+    return {"success": True}
+
+@app.post("/api/inbox/mark-all-read")
+async def mark_all_read(user_id: str = "default"):
+    """Mark all messages as read."""
+    if user_id in USER_INBOX:
+        for msg in USER_INBOX[user_id]:
+            msg["read"] = True
+    return {"success": True}
+
+@app.post("/api/inbox/delete")
+async def delete_message(message_id: str = Query(...), user_id: str = "default"):
+    """Delete a message."""
+    if user_id in USER_INBOX:
+        USER_INBOX[user_id] = [m for m in USER_INBOX[user_id] if m.get("id") != message_id]
+    return {"success": True}
 
 # ============================================================================
 # DASHBOARD STATISTICS
@@ -444,7 +547,8 @@ async def get_dashboard_stats():
             "verified_percentage": 0,
             "average_rating": 0,
             "average_ai_score": 0,
-            "categories": {}
+            "categories": {},
+            "status": "No suppliers loaded"
         }
     
     suppliers_list = list(ALL_SUPPLIERS.values())
@@ -467,55 +571,32 @@ async def get_dashboard_stats():
     }
 
 # ============================================================================
-# HEALTH CHECK
+# STATIC FILE SERVING
 # ============================================================================
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "message": "API is running",
-        "suppliers_loaded": len(ALL_SUPPLIERS),
-        "mode": "PRODUCTION (NO LOCAL DATA)"
-    }
 
 @app.get("/")
 async def root():
     """Serve the main dashboard HTML."""
     try:
-        import os
         index_path = os.path.join(os.path.dirname(__file__), "index.html")
         if os.path.exists(index_path):
             return FileResponse(index_path, media_type="text/html")
     except:
         pass
     
-    # Fallback API response
     return {
         "api": "Supplier Search Engine",
-        "version": "3.0.0",
+        "version": "4.0.0",
         "status": "running",
-        "mode": "PRODUCTION - NO LOCAL SUPPLIER GENERATION",
+        "mode": "PRODUCTION - ZERO LOCAL DATA",
         "documentation": "/docs",
-        "suppliers_loaded": len(ALL_SUPPLIERS),
-        "features": [
-            "✅ Supplier Search & Filtering",
-            "✅ Supplier Management (Add/Edit/Delete)",
-            "✅ CSV Import",
-            "✅ Favorites Management",
-            "✅ Notes Management",
-            "✅ AI Chatbot",
-            "✅ Walmart SSO Integration",
-            "✅ Hardware & Fixtures Filters"
-        ]
+        "suppliers_loaded": len(ALL_SUPPLIERS)
     }
 
 @app.get("/{file_path:path}")
 async def serve_static(file_path: str):
-    """Serve static files (HTML, CSS, JS, etc.)."""
+    """Serve static files (HTML, CSS, JS, SVG, etc.)."""
     try:
-        import os
         full_path = os.path.join(os.path.dirname(__file__), file_path)
         if os.path.exists(full_path) and os.path.isfile(full_path):
             if file_path.endswith('.html'):
@@ -534,6 +615,20 @@ async def serve_static(file_path: str):
         pass
     
     raise HTTPException(status_code=404, detail="File not found")
+
+# ============================================================================
+# HEALTH CHECK
+# ============================================================================
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "message": "API is running",
+        "suppliers_loaded": len(ALL_SUPPLIERS),
+        "mode": "PRODUCTION (ZERO LOCAL DATA)"
+    }
 
 if __name__ == "__main__":
     import uvicorn

@@ -10,10 +10,13 @@
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&family=Space+Grotesk:wght@500;700&display=swap');
         
         :root {
-            --walmart-blue: #0071ce;
-            --walmart-dark-blue: #004c91;
-            --light-bg: #f8f9fa;
-            --border: #e0e0e0;
+            --walmart-blue: #001e60;
+            --everyday-blue: #4dbdf5;
+            --sky-blue: #a9ddf7;
+            --yellow: #ffc220;
+            --white: #ffffff;
+            --light-bg: #f5f8fa;
+            --border: #dde4eb;
             --body-font: 'Inter', 'Helvetica Neue', sans-serif;
             --accent-font: 'Space Grotesk', 'Helvetica', sans-serif;
         }
@@ -28,20 +31,21 @@
             font-family: var(--body-font);
             background: #ffffff;
             background-image: 
-                linear-gradient(90deg, rgba(0, 113, 206, 0.03) 1px, transparent 1px),
-                linear-gradient(rgba(0, 113, 206, 0.03) 1px, transparent 1px);
+                linear-gradient(90deg, rgba(77, 189, 245, 0.05) 1px, transparent 1px),
+                linear-gradient(rgba(77, 189, 245, 0.05) 1px, transparent 1px);
             background-size: 50px 50px;
             font-size: 13px;
             line-height: 1.5;
             padding: 0;
             margin: 0;
+            color: #333;
         }
         
         .header {
-            background: var(--walmart-blue);
-            color: white;
+            background: linear-gradient(135deg, var(--walmart-blue) 0%, var(--everyday-blue) 100%);
+            color: var(--white);
             padding: 30px 20px;
-            border-bottom: 3px solid #ffc220;
+            border-bottom: 4px solid var(--yellow);
         }
         
         .header-content {
@@ -63,7 +67,7 @@
             width: 50px;
             height: 50px;
             border-radius: 8px;
-            background: white;
+            background: var(--yellow);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -85,7 +89,7 @@
         
         .btn {
             padding: 10px 20px;
-            background: white;
+            background: var(--yellow);
             color: var(--walmart-blue);
             border: none;
             border-radius: 4px;
@@ -97,9 +101,10 @@
         }
         
         .btn:hover {
-            background: #ffc220;
-            color: #333;
+            background: var(--white);
+            color: var(--walmart-blue);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 30, 96, 0.15);
         }
         
         .main-container {
@@ -136,8 +141,8 @@
         
         .search-box input:focus {
             outline: none;
-            border-color: var(--walmart-blue);
-            box-shadow: 0 0 0 3px rgba(0, 113, 206, 0.1);
+            border-color: var(--everyday-blue);
+            box-shadow: 0 0 0 3px rgba(77, 189, 245, 0.1);
         }
         
         .filter-controls {
@@ -153,26 +158,26 @@
             border-radius: 4px;
             font-size: 13px;
             font-family: var(--body-font);
-            background: white;
+            background: var(--white);
             cursor: pointer;
             transition: all 0.3s;
         }
         
         .filter-controls select:focus {
             outline: none;
-            border-color: var(--walmart-blue);
-            box-shadow: 0 0 0 3px rgba(0, 113, 206, 0.1);
+            border-color: var(--everyday-blue);
+            box-shadow: 0 0 0 3px rgba(77, 189, 245, 0.1);
         }
         
         .filter-controls button {
-            background: white;
+            background: var(--white);
             color: var(--walmart-blue);
             font-weight: 600;
         }
         
         .filter-controls button:hover {
-            background: var(--walmart-blue);
-            color: white;
+            background: var(--everyday-blue);
+            color: var(--white);
         }
         
         .sort-controls {
@@ -183,7 +188,7 @@
         
         .sort-btn {
             padding: 8px 12px;
-            background: white;
+            background: var(--white);
             border: 1px solid var(--border);
             border-radius: 4px;
             cursor: pointer;
@@ -193,7 +198,7 @@
         
         .sort-btn.active {
             background: var(--walmart-blue);
-            color: white;
+            color: var(--white);
             border-color: var(--walmart-blue);
         }
         
@@ -204,7 +209,7 @@
         }
         
         .help-card {
-            background: white;
+            background: var(--white);
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 25px;
@@ -213,8 +218,8 @@
         }
         
         .help-card:hover {
-            box-shadow: 0 8px 16px rgba(0, 113, 206, 0.1);
-            border-color: var(--walmart-blue);
+            box-shadow: 0 8px 16px rgba(77, 189, 245, 0.15);
+            border-color: var(--everyday-blue);
             transform: translateY(-4px);
         }
         
@@ -231,8 +236,8 @@
         
         .help-card-category {
             display: inline-block;
-            background: rgba(0, 113, 206, 0.1);
-            color: var(--walmart-blue);
+            background: rgba(77, 189, 245, 0.1);
+            color: var(--everyday-blue);
             padding: 4px 8px;
             border-radius: 3px;
             font-size: 11px;
@@ -251,8 +256,8 @@
         }
         
         .walmart-verified-section {
-            background: #f0f7ff;
-            border-left: 4px solid var(--walmart-blue);
+            background: linear-gradient(135deg, rgba(77, 189, 245, 0.1), rgba(169, 221, 247, 0.1));
+            border-left: 4px solid var(--everyday-blue);
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -325,7 +330,7 @@
     <div class="main-container">
         <!-- Walmart Verified Explanation -->
         <div class="walmart-verified-section">
-            <h3>What Does "Walmart Verified" Mean?</h3>
+            <h3>✅ What Does "Walmart Verified" Mean?</h3>
             <p><strong>Walmart Verified</strong> is a badge that indicates a supplier has been audited and approved by Walmart's supplier verification process. This is a mark of trust and reliability.</p>
             <p><strong>Walmart Verified suppliers have:</strong></p>
             <ul>
@@ -375,7 +380,7 @@
     
     <!-- Footer -->
     <div class="footer">
-        <p>Supplier Hub v2.0 | Built with modern web technologies | All rights reserved</p>
+        <p>Supplier Hub v4.0 | Built with modern web technologies | All rights reserved</p>
         <button class="btn" onclick="window.history.back()">Back to Dashboard</button>
     </div>
     
@@ -391,7 +396,7 @@
                 id: 2,
                 title: 'First Time Login',
                 category: 'getting-started',
-                content: 'Visit the dashboard and refresh the page. Fill in your email address and name in the login modal. Optionally enter your Walmart ID for SSO authentication. Click "Login" or "Continue as Guest" and your session will be saved automatically.'
+                content: 'Visit the login page and enter your email and name. You can also login with your Walmart ID for SSO authentication. Your session will be saved automatically.'
             },
             {
                 id: 3,
@@ -407,114 +412,120 @@
             },
             {
                 id: 5,
+                title: 'Hardware & Fixtures Filter',
+                category: 'features',
+                content: 'Use the dedicated Hardware & Fixtures filter to quickly find suppliers that specialize in hardware products, fixtures, tools, and related items. Perfect for construction and retail operations.'
+            },
+            {
+                id: 6,
                 title: 'Save Favorites',
                 category: 'features',
                 content: 'Click the star icon to add suppliers to your favorites. Access your saved favorites anytime from the user menu. Build your curated list of preferred suppliers.'
             },
             {
-                id: 6,
+                id: 7,
                 title: 'Add Notes',
                 category: 'features',
                 content: 'Keep track of important information about suppliers by adding notes. Edit or delete notes anytime. Perfect for tracking pricing, quality feedback, or delivery performance.'
             },
             {
-                id: 7,
-                title: 'Compare Suppliers',
-                category: 'features',
-                content: 'Select multiple suppliers and compare them side-by-side to make better decisions. Compare ratings, certifications, locations, and more at a glance.'
-            },
-            {
                 id: 8,
-                title: 'Check Your Inbox',
+                title: 'Add & Manage Suppliers',
                 category: 'features',
-                content: 'Receive notifications about your favorites, notes, and important supplier updates. Mark messages as read or delete them. Your inbox keeps you informed and organized.'
+                content: 'Add new suppliers directly to the database. Edit existing supplier information, delete suppliers you no longer need, or import multiple suppliers from a CSV file.'
             },
             {
                 id: 9,
-                title: 'Do I need to login?',
-                category: 'faq',
-                content: 'Yes, to use features like favorites, notes, and inbox, you need to login. You can either login with your Walmart ID or as a guest. Login is quick and takes less than a minute.'
+                title: 'AI Chatbot Assistant',
+                category: 'features',
+                content: 'Chat with our AI assistant to search suppliers, get recommendations, and analyze supplier data. The chatbot understands natural language and provides instant answers.'
             },
             {
                 id: 10,
+                title: 'Do I need to login?',
+                category: 'faq',
+                content: 'Yes, to use features like favorites, notes, and personal settings, you need to login. You can either login with your Walmart ID or as a guest. Login is quick and takes less than a minute.'
+            },
+            {
+                id: 11,
                 title: 'How long is my session active?',
                 category: 'faq',
                 content: 'For Walmart SSO users: 7 days. For guest users: 24 hours. Your session persists even if you close the browser. After expiration, you\'ll need to login again.'
             },
             {
-                id: 11,
+                id: 12,
                 title: 'Can I share my favorites with others?',
                 category: 'faq',
                 content: 'Currently, favorites are personal to your account and cannot be shared directly. However, you can manually share supplier information by copying the supplier name or details.'
             },
             {
-                id: 12,
+                id: 13,
                 title: 'What happens to my data if I logout?',
                 category: 'faq',
-                content: 'Your data (favorites, notes, messages) is saved on our secure servers. When you login again, all your data will be there. You can access it from any device with the same email.'
+                content: 'Your data (favorites, notes) is saved on our secure servers. When you login again, all your data will be there. You can access it from any device with the same email.'
             },
             {
-                id: 13,
+                id: 14,
                 title: 'Can I delete my account?',
                 category: 'faq',
                 content: 'For now, accounts don\'t need to be deleted - you can simply not login. If you need to delete your data, please contact support with your email address.'
             },
             {
-                id: 14,
+                id: 15,
                 title: 'What\'s the difference between favorites and notes?',
                 category: 'faq',
                 content: '<strong>Favorites:</strong> Quick way to save suppliers you like. Shows just the supplier name and date. <strong>Notes:</strong> Detailed information about suppliers. You can add custom text and edit anytime. Use notes for specific feedback or important details.'
             },
             {
-                id: 15,
+                id: 16,
                 title: 'Your Data is Safe',
                 category: 'account',
-                content: 'All your data (favorites, notes, messages) is stored securely on our servers. Only you can access your account with your unique session token. We use industry-standard encryption.'
+                content: 'All your data (favorites, notes) is stored securely on our servers. Only you can access your account with your unique session token. We use industry-standard encryption.'
             },
             {
-                id: 16,
+                id: 17,
                 title: 'Session Management',
                 category: 'account',
                 content: 'Your session token is stored in your browser locally. Nobody else can access your account on this device. Sessions automatically expire for security. You can logout anytime from the user menu.'
             },
             {
-                id: 17,
+                id: 18,
                 title: 'Privacy Protection',
                 category: 'account',
                 content: 'Your email is used only for account identification. No personal information is shared with suppliers. Supplier data is aggregated from public sources. Your notes are private and visible only to you.'
             },
             {
-                id: 18,
+                id: 19,
                 title: 'Search Tips',
                 category: 'tips',
                 content: 'Use specific keywords for better results. Try searching by product name, category, or location. Use filters to narrow down large result sets. Check multiple pages for more options.'
             },
             {
-                id: 19,
+                id: 20,
                 title: 'Favorite Organization',
                 category: 'tips',
                 content: 'Save suppliers you frequently use as favorites. Use notes to add context to your favorites. Regularly review and clean up old favorites. Add notes about pricing, quality, or delivery.'
             },
             {
-                id: 20,
+                id: 21,
                 title: 'Understanding AI Score',
                 category: 'tips',
                 content: '<strong>AI Score</strong> is an automated quality metric (1-100) evaluating suppliers on: Reliability, Quality, Communication, Certifications, Market Presence, and Verification Status. <strong>90-100:</strong> Excellent. <strong>80-89:</strong> Good. <strong>70-79:</strong> Average. <strong>Below 70:</strong> Below Average. Use it as one factor among ratings and certifications.'
             },
             {
-                id: 21,
+                id: 22,
                 title: 'General Best Practices',
                 category: 'tips',
-                content: 'Review supplier ratings and Walmart verification status. Check AI scores for supplier quality insights. Use notes to track supplier performance over time. Compare multiple suppliers before decisions.'
+                content: 'Review supplier ratings and Walmart verification status. Check AI scores for supplier quality insights. Use notes to track supplier performance over time. Compare multiple suppliers before decisions. Use Hardware & Fixtures filter for construction-related suppliers.'
             },
             {
-                id: 22,
+                id: 23,
                 title: 'Troubleshooting',
                 category: 'support',
                 content: '<strong>Login issue:</strong> Clear cache and try again. <strong>Data not showing:</strong> Refresh the page (Ctrl+R). <strong>Slow loading:</strong> Normal for large result sets - use filters. <strong>Can\'t find supplier:</strong> Try different search terms or use filters.'
             },
             {
-                id: 23,
+                id: 24,
                 title: 'Contact Support',
                 category: 'support',
                 content: 'For technical issues or feature requests, contact support with: Your email address, Description of the issue, Steps to reproduce the problem, Browser and device information.'
