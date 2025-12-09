@@ -19,6 +19,7 @@ import csv
 import io
 from datetime import datetime
 import os
+import random
 
 # ============================================================================
 # LOGGING & CONFIG
@@ -62,11 +63,6 @@ if os.path.exists(os.path.dirname(__file__)):
 print("\n" + "="*80)
 print("SUPPLIER SEARCH ENGINE - BACKEND INITIALIZATION")
 print("="*80)
-print("\n[PRODUCTION] MODE: ZERO LOCAL SUPPLIER DATA")
-print("[OK] STATUS: Ready to receive supplier data")
-print("[IMPORTANT] No suppliers loaded at startup")
-print("[ACTION] Import suppliers via CSV or API")
-print("\n" + "="*80 + "\n")
 
 # ZERO LOCAL DATA - EMPTY DICTIONARIES
 ALL_SUPPLIERS: Dict[int, Dict[str, Any]] = {}  # Will be populated via import only
@@ -75,7 +71,89 @@ USER_NOTES: Dict[str, Dict[str, Dict]] = {}  # {user_id: {supplier_id: note_data
 USER_SESSIONS: Dict[str, Dict[str, Any]] = {}  # {session_id: session_data}
 USER_INBOX: Dict[str, List[Dict]] = {}  # {user_id: [messages]}
 
-logger.info("[PRODUCTION] Backend initialized with ZERO suppliers (no local data generation)")
+# ============================================================================
+# LOAD SEED SUPPLIERS (from Documents version for compatibility)
+# ============================================================================
+
+class SeededRandom:
+    """Seeded RNG using seed 1962 (Walmart founding year)"""
+    def __init__(self, seed=1962):
+        self.rng = random.Random(seed)
+    def random(self):
+        return self.rng.random()
+
+def generate_seed_suppliers():
+    """Generate 500 suppliers with seeded randomness for demo/testing"""
+    seeded = SeededRandom(1962)
+    
+    product_categories = {
+        "Lumber & Wood Products": ["2x4 Lumber", "Plywood", "Particle Board", "MDF", "Hardwood Flooring"],
+        "Concrete & Masonry": ["Portland Cement", "Ready-Mix Concrete", "Cinder Blocks", "Bricks"],
+        "Steel & Metal": ["Steel Beams", "Rebar", "Steel Pipe", "Aluminum Siding"],
+        "Electrical Supplies": ["Electrical Wire", "Outlets", "Light Fixtures", "Circuit Breakers"],
+        "Plumbing Supplies": ["PVC Pipe", "Copper Pipe", "Faucets", "Valves"],
+        "HVAC Equipment": ["Air Conditioning Units", "Furnaces", "Heat Pumps", "Ductwork"],
+        "Roofing Materials": ["Asphalt Shingles", "Metal Roofing", "Tar & Gravel"],
+        "Windows & Doors": ["Vinyl Windows", "Wood Doors", "Sliding Glass Doors"],
+        "Paint & Finishes": ["Interior Paint", "Exterior Paint", "Primer", "Stain"],
+        "Hardware & Fasteners": ["Nails", "Screws", "Bolts", "Hinges"]
+    }
+    
+    adjectives = ['Premier', 'Elite', 'Pro', 'Superior', 'Quality', 'Reliable', 'National', 'Metro', 'Allied', 'United']
+    cities = [
+        {'city': 'New York', 'state': 'NY'},
+        {'city': 'Los Angeles', 'state': 'CA'},
+        {'city': 'Chicago', 'state': 'IL'},
+        {'city': 'Houston', 'state': 'TX'},
+        {'city': 'Dallas', 'state': 'TX'},
+        {'city': 'Denver', 'state': 'CO'},
+        {'city': 'Seattle', 'state': 'WA'},
+        {'city': 'Atlanta', 'state': 'GA'},
+        {'city': 'Miami', 'state': 'FL'},
+        {'city': 'Boston', 'state': 'MA'}
+    ]
+    
+    suppliers = []
+    supplier_id = 1
+    
+    for category, products in product_categories.items():
+        suppliers_per_category = 50  # 50 suppliers per category = 500 total
+        
+        for i in range(suppliers_per_category):
+            adj = adjectives[int(seeded.random() * len(adjectives))]
+            city_data = cities[int(seeded.random() * len(cities))]
+            
+            # Select products
+            num_products = int(seeded.random() * 3) + 2
+            supplier_products = [products[int(seeded.random() * len(products))] for _ in range(num_products)]
+            
+            suppliers.append({
+                'id': supplier_id,
+                'name': f"{adj} {category.split()[0]} Supply Inc.",
+                'category': category,
+                'location': f"{city_data['city']}, {city_data['state']}",
+                'region': city_data['state'],
+                'rating': round(seeded.random() * 1.5 + 3.5, 1),
+                'aiScore': int(seeded.random() * 30 + 70),
+                'products': list(set(supplier_products)),
+                'certifications': ['ISO 9001', 'EPA Certified'],
+                'walmartVerified': seeded.random() > 0.4,
+                'yearsInBusiness': int(seeded.random() * 40 + 5),
+                'projectsCompleted': int(seeded.random() * 5000 + 100),
+            })
+            supplier_id += 1
+    
+    return suppliers
+
+# Load seed suppliers
+print("[INIT] Generating seed supplier data...")
+seed_suppliers = generate_seed_suppliers()
+for supplier in seed_suppliers:
+    ALL_SUPPLIERS[supplier['id']] = supplier
+
+print(f"[SUCCESS] Loaded {len(ALL_SUPPLIERS)} seed suppliers")
+print("[INFO] Can import additional suppliers via /api/suppliers/import endpoint")
+logger.info(f"[PRODUCTION] Backend initialized with {len(ALL_SUPPLIERS)} seed suppliers")
 logger.info(f"[STATUS] Total suppliers in memory: {len(ALL_SUPPLIERS)}")
 
 # ============================================================================
@@ -89,26 +167,15 @@ class LoginRequest(BaseModel):
     walmart_id: Optional[str] = None
 
 @app.post("/api/auth/login")
-async def login(request: dict = Body(...)):
+async def login(request: LoginRequest):
     """User login endpoint - accepts JSON data."""
     try:
         import uuid
         
         # Extract and validate fields
-        email = request.get("email", "")
-        name = request.get("name", "")
-        walmart_id = request.get("walmart_id")
-        
-        if isinstance(email, str):
-            email = email.strip()
-        if isinstance(name, str):
-            name = name.strip()
-        if isinstance(walmart_id, str):
-            walmart_id = walmart_id.strip()
-        elif walmart_id is None:
-            walmart_id = None
-        else:
-            walmart_id = str(walmart_id).strip()
+        email = request.email.strip() if request.email else ""
+        name = request.name.strip() if request.name else ""
+        walmart_id = request.walmart_id.strip() if request.walmart_id else None
         
         if not email or not name:
             raise HTTPException(status_code=400, detail="Email and name are required")
@@ -120,7 +187,7 @@ async def login(request: dict = Body(...)):
             "user_id": user_id,
             "email": email,
             "name": name,
-            "walmart_id": walmart_id if walmart_id else None,
+            "walmart_id": walmart_id,
             "login_time": datetime.now().isoformat(),
             "sso_provider": "walmart" if walmart_id else "guest"
         }
