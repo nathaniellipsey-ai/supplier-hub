@@ -22,22 +22,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Try to import real backend app
+# Initialize suppliers
 BACKEND_AVAILABLE = False
+ALL_SUPPLIERS = []
+
 try:
     print("[INFO] Attempting to import backend modules...")
     from backend.suppliers_generator import SupplierGenerator
-    from backend.models import SupplierResponse, SupplierList
-    print("[INFO] Successfully imported backend modules")
-    BACKEND_AVAILABLE = True
+    print("[INFO] Successfully imported SupplierGenerator")
     
     # Initialize real supplier data
+    print("[INFO] Generating suppliers...")
     generator = SupplierGenerator()
     ALL_SUPPLIERS = generator.generate_suppliers()
-    print(f"[INFO] Loaded {len(ALL_SUPPLIERS)} suppliers from backend")
+    BACKEND_AVAILABLE = True
+    print(f"[SUCCESS] Loaded {len(ALL_SUPPLIERS)} suppliers from backend")
 except Exception as e:
-    print(f"[WARNING] Could not import backend: {e}")
-    print("[INFO] Falling back to minimal data")
+    print(f"[ERROR] Could not load suppliers: {type(e).__name__}: {e}")
+    print("[WARNING] Falling back to minimal data")
     BACKEND_AVAILABLE = False
     # Minimal fallback data
     ALL_SUPPLIERS = [
@@ -45,6 +47,8 @@ except Exception as e:
         {"id": 2, "name": "Elite Concrete Distributors", "category": "Concrete & Masonry", "location": "Houston, TX", "rating": 4.6, "products": ["Ready-Mix Concrete", "Cinder Blocks"], "walmartVerified": True, "aiScore": 89},
         {"id": 3, "name": "Pro Steel & Metal", "category": "Steel & Metal", "location": "Pittsburgh, PA", "rating": 4.7, "products": ["Steel Beams", "Rebar"], "walmartVerified": True, "aiScore": 91},
     ]
+
+print(f"[INFO] Total suppliers available: {len(ALL_SUPPLIERS)}")
 
 # ============================================================================
 # HEALTH CHECKS
