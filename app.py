@@ -89,13 +89,26 @@ class LoginRequest(BaseModel):
     walmart_id: Optional[str] = None
 
 @app.post("/api/auth/login")
-async def login(request: LoginRequest):
+async def login(request: dict = Body(...)):
     """User login endpoint - accepts JSON data."""
     try:
         import uuid
-        email = request.email.strip()
-        name = request.name.strip()
-        walmart_id = request.walmart_id.strip() if request.walmart_id else None
+        
+        # Extract and validate fields
+        email = request.get("email", "")
+        name = request.get("name", "")
+        walmart_id = request.get("walmart_id")
+        
+        if isinstance(email, str):
+            email = email.strip()
+        if isinstance(name, str):
+            name = name.strip()
+        if isinstance(walmart_id, str):
+            walmart_id = walmart_id.strip()
+        elif walmart_id is None:
+            walmart_id = None
+        else:
+            walmart_id = str(walmart_id).strip()
         
         if not email or not name:
             raise HTTPException(status_code=400, detail="Email and name are required")
@@ -238,10 +251,10 @@ class SupplierRequest(BaseModel):
     projectsCompleted: int
 
 @app.post("/api/suppliers/add")
-async def add_supplier(supplier_data: SupplierRequest):
+async def add_supplier(supplier_data: dict = Body(...)):
     """Add a single supplier."""
     try:
-        name = supplier_data.name.strip()
+        name = str(supplier_data.get("name", "")).strip()
         if not name:
             raise HTTPException(status_code=400, detail="Supplier name is required")
         
@@ -250,16 +263,16 @@ async def add_supplier(supplier_data: SupplierRequest):
         supplier = {
             "id": supplier_id,
             "name": name,
-            "category": supplier_data.category,
-            "location": supplier_data.location,
-            "region": supplier_data.region,
-            "rating": supplier_data.rating,
-            "aiScore": supplier_data.aiScore,
-            "products": supplier_data.products,
-            "certifications": supplier_data.certifications,
-            "walmartVerified": supplier_data.walmartVerified,
-            "yearsInBusiness": supplier_data.yearsInBusiness,
-            "projectsCompleted": supplier_data.projectsCompleted,
+            "category": supplier_data.get("category", ""),
+            "location": supplier_data.get("location", ""),
+            "region": supplier_data.get("region", ""),
+            "rating": supplier_data.get("rating", 0),
+            "aiScore": supplier_data.get("aiScore", 0),
+            "products": supplier_data.get("products", []),
+            "certifications": supplier_data.get("certifications", []),
+            "walmartVerified": supplier_data.get("walmartVerified", False),
+            "yearsInBusiness": supplier_data.get("yearsInBusiness", 0),
+            "projectsCompleted": supplier_data.get("projectsCompleted", 0),
             "created_at": datetime.now().isoformat()
         }
         
@@ -278,24 +291,24 @@ async def add_supplier(supplier_data: SupplierRequest):
         raise HTTPException(status_code=400, detail=f"Failed to add supplier: {str(e)}")
 
 @app.put("/api/suppliers/{supplier_id}")
-async def edit_supplier(supplier_id: int, supplier_data: SupplierRequest):
+async def edit_supplier(supplier_id: int, supplier_data: dict = Body(...)):
     """Edit an existing supplier."""
     if supplier_id not in ALL_SUPPLIERS:
         raise HTTPException(status_code=404, detail="Supplier not found")
     
     try:
         ALL_SUPPLIERS[supplier_id].update({
-            "name": supplier_data.name,
-            "category": supplier_data.category,
-            "location": supplier_data.location,
-            "region": supplier_data.region,
-            "rating": supplier_data.rating,
-            "aiScore": supplier_data.aiScore,
-            "products": supplier_data.products,
-            "certifications": supplier_data.certifications,
-            "walmartVerified": supplier_data.walmartVerified,
-            "yearsInBusiness": supplier_data.yearsInBusiness,
-            "projectsCompleted": supplier_data.projectsCompleted,
+            "name": supplier_data.get("name", ALL_SUPPLIERS[supplier_id].get("name")),
+            "category": supplier_data.get("category", ALL_SUPPLIERS[supplier_id].get("category")),
+            "location": supplier_data.get("location", ALL_SUPPLIERS[supplier_id].get("location")),
+            "region": supplier_data.get("region", ALL_SUPPLIERS[supplier_id].get("region")),
+            "rating": supplier_data.get("rating", ALL_SUPPLIERS[supplier_id].get("rating")),
+            "aiScore": supplier_data.get("aiScore", ALL_SUPPLIERS[supplier_id].get("aiScore")),
+            "products": supplier_data.get("products", ALL_SUPPLIERS[supplier_id].get("products")),
+            "certifications": supplier_data.get("certifications", ALL_SUPPLIERS[supplier_id].get("certifications")),
+            "walmartVerified": supplier_data.get("walmartVerified", ALL_SUPPLIERS[supplier_id].get("walmartVerified")),
+            "yearsInBusiness": supplier_data.get("yearsInBusiness", ALL_SUPPLIERS[supplier_id].get("yearsInBusiness")),
+            "projectsCompleted": supplier_data.get("projectsCompleted", ALL_SUPPLIERS[supplier_id].get("projectsCompleted")),
             "updated_at": datetime.now().isoformat()
         })
         logger.info(f"[UPDATE] Updated supplier: {ALL_SUPPLIERS[supplier_id]['name']}")
