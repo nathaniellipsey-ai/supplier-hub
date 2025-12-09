@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inbox - Supplier Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0071ce 0%, #005bb3 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: white;
+            color: #0071ce;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .no-messages {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .no-messages-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .messages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .message:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #0071ce;
+        }
+        
+        .message.unread {
+            background: #f0f7ff;
+            border-left: 4px solid #0071ce;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+        
+        .message-subject {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .message.unread .message-subject {
+            color: #0071ce;
+        }
+        
+        .message-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .badge-success {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        .badge-warning {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .badge-alert {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .message-content {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        
+        .message-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            background: #f5f5f5;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #f5f5f5;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0071ce;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Inbox</h1>
+            <div class="header-actions">
+                <button class="btn" onclick="markAllAsRead()">Mark All as Read</button>
+                <button class="btn" onclick="window.history.back()">Back</button>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div id="messages-container"></div>
+        </div>
+    </div>
+    
+    <script src="js/auth-client.js"></script>
+    <script>
+        async function loadInbox() {
+            const container = document.getElementById('messages-container');
+            
+            if (!authClient.isAuthenticated) {
+                container.innerHTML = `
+                    <div class="no-messages">
+                        <div class="no-messages-icon">🔐</div>
+                        <h3>Not Logged In</h3>
+                        <p>Please login to view your inbox.</p>
+                        <br>
+                        <a href="index.html" class="back-btn">Back to Dashboard</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+            
+            try {
+                const inbox = await authClient.getInbox();
+                
+                if (inbox.count === 0) {
+                    container.innerHTML = `
+                        <div class="no-messages">
+                            <div class="no-messages-icon">📭</div>
+                            <h3>No Messages</h3>
+                            <p>Your inbox is empty. Check back later!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const html = inbox.messages.map(msg => `
+                    <div class="message ${!msg.read ? 'unread' : ''}">
+                        <div class="message-header">
+                            <div class="message-subject">${msg.subject}</div>
+                            <span class="badge badge-${msg.type}">${msg.type}</span>
+                        </div>
+                        <div class="message-meta">
+                            <span>From: ${msg.sender}</span>
+                            <span>${formatDate(msg.created_at)}</span>
+                            ${!msg.read ? '<span style="color: #0071ce; font-weight: 600;">NEW</span>' : ''}
+                        </div>
+                        <div class="message-content">${msg.message}</div>
+                        <div class="message-actions">
+                            ${!msg.read ? `<button class="action-btn" onclick="markAsRead('${msg.id}')">Mark as Read</button>` : ''}
+                            <button class="action-btn" onclick="deleteMessage('${msg.id}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                container.innerHTML = `<div class="messages-list">${html}</div>`;
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="no-messages">
+                        <div class="no-messages-icon">⚠️</div>
+                        <h3>Error Loading Inbox</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function markAsRead(messageId) {
+            try {
+                await authClient.markAsRead(messageId);
+                loadInbox();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function markAllAsRead() {
+            try {
+                await authClient.markAllAsRead();
+                loadInbox();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function deleteMessage(messageId) {
+            if (confirm('Delete this message?')) {
+                try {
+                    await authClient.deleteMessage(messageId);
+                    loadInbox();
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            
+            return date.toLocaleDateString();
+        }
+        
+        // Load on page load
+        loadInbox();
+    </script>
+</body>
+</html>
