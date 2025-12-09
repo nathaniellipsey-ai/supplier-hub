@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help - Supplier Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0071ce 0%, #005bb3 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: white;
+            color: #0071ce;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section h2 {
+            color: #0071ce;
+            margin-bottom: 15px;
+            font-size: 22px;
+            border-bottom: 2px solid #0071ce;
+            padding-bottom: 10px;
+        }
+        
+        .section h3 {
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .section p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        
+        .section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .section li {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature-card {
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background: #f9f9f9;
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #0071ce;
+        }
+        
+        .feature-card h4 {
+            color: #0071ce;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .feature-card p {
+            color: #666;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .code-block {
+            background: #f5f5f5;
+            border-left: 4px solid #0071ce;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #333;
+        }
+        
+        .faq-item {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .faq-question {
+            background: #f9f9f9;
+            padding: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #0071ce;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .faq-question:hover {
+            background: #f0f7ff;
+        }
+        
+        .faq-answer {
+            padding: 15px;
+            color: #666;
+            line-height: 1.8;
+            display: none;
+            background: white;
+        }
+        
+        .faq-answer.active {
+            display: block;
+        }
+        
+        .toggle-icon {
+            transition: transform 0.3s;
+        }
+        
+        .faq-item.open .toggle-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Help & Documentation</h1>
+            <button class="btn" onclick="window.history.back()">Back to Dashboard</button>
+        </div>
+        
+        <div class="content">
+            <!-- Getting Started -->
+            <div class="section">
+                <h2>Getting Started</h2>
+                <h3>Welcome to Supplier Hub!</h3>
+                <p>Supplier Hub is a powerful platform for searching, filtering, and managing supplier information. Whether you're looking for specific suppliers or want to maintain a curated list of favorites, this guide will help you get started.</p>
+                
+                <h3>First Time Login</h3>
+                <ul>
+                    <li>Visit the dashboard and refresh the page (Ctrl+R)</li>
+                    <li>Fill in your email address and name in the login modal</li>
+                    <li>Optionally enter your Walmart ID for SSO authentication</li>
+                    <li>Click "Login" or "Continue as Guest"</li>
+                    <li>Your session will be saved automatically</li>
+                </ul>
+            </div>
+            
+            <!-- Core Features -->
+            <div class="section">
+                <h2>Core Features</h2>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>Search Suppliers</h4>
+                        <p>Find suppliers by name, category, location, or products. Use the search bar to quickly locate what you need.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Filter & Sort</h4>
+                        <p>Use advanced filters on the left sidebar to narrow down results by category, region, certification, and more.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Save Favorites</h4>
+                        <p>Click the star icon to add suppliers to your favorites. Access them anytime from the user menu.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Add Notes</h4>
+                        <p>Keep track of important information about suppliers by adding notes. Edit or delete notes anytime.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Compare Suppliers</h4>
+                        <p>Select multiple suppliers and compare them side-by-side to make better decisions.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Inbox</h4>
+                        <p>Receive notifications about your favorites, notes, and important supplier updates. Mark messages as read or delete them.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- How-To Guides -->
+            <div class="section">
+                <h2>How-To Guides</h2>
+                
+                <h3>How to Add a Favorite</h3>
+                <ol style="margin-left: 20px; color: #666;">
+                    <li>Browse suppliers in the dashboard</li>
+                    <li>Click the star icon on the supplier card</li>
+                    <li>See the "Added to favorites!" notification</li>
+                    <li>Access favorites anytime from the user menu</li>
+                </ol>
+                
+                <h3>How to View My Favorites</h3>
+                <ol style="margin-left: 20px; color: #666;">
+                    <li>Click your user avatar in the top right corner</li>
+                    <li>Click "My Favorites"</li>
+                    <li>View all your saved favorite suppliers</li>
+                    <li>Click "View" to see details or "Remove" to delete</li>
+                </ol>
+                
+                <h3>How to Add a Note</h3>
+                <ol style="margin-left: 20px; color: #666;">
+                    <li>Click on a supplier name to open their details</li>
+                    <li>Click the "Add Note" button</li>
+                    <li>Type your note in the modal</li>
+                    <li>Click "Save Note" to store it</li>
+                </ol>
+                
+                <h3>How to View My Notes</h3>
+                <ol style="margin-left: 20px; color: #666;">
+                    <li>Click your user avatar in the top right corner</li>
+                    <li>Click "My Notes"</li>
+                    <li>See all your notes organized by supplier</li>
+                    <li>Click "Edit" to modify or "Delete" to remove</li>
+                </ol>
+                
+                <h3>How to Check Your Inbox</h3>
+                <ol style="margin-left: 20px; color: #666;">
+                    <li>Click your user avatar in the top right corner</li>
+                    <li>Click "Inbox"</li>
+                    <li>View all your messages and notifications</li>
+                    <li>Click "Mark as Read" or delete messages as needed</li>
+                </ol>
+                
+                <h3>How to Search for Suppliers</h3>
+                <ol style="margin-left: 20px; color: #666;">
+                    <li>Use the search bar at the top of the page</li>
+                    <li>Type supplier name, category, or product</li>
+                    <li>See real-time suggestions appear</li>
+                    <li>Click a suggestion or press Enter to search</li>
+                </ol>
+                
+                <h3>How to Use Filters</h3>
+                <ol style="margin-left: 20px; color: #666;">
+                    <li>Look for the filter panel on the left side</li>
+                    <li>Click on filter categories to expand them</li>
+                    <li>Select the filters you want to apply</li>
+                    <li>Results update automatically</li>
+                </ol>
+            </div>
+            
+            <!-- FAQ -->
+            <div class="section">
+                <h2>Frequently Asked Questions</h2>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Do I need to login?</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, to use features like favorites, notes, and inbox, you need to login. You can either login with your Walmart ID or as a guest. Login is quick and takes less than a minute.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>How long is my session active?</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>For Walmart SSO users: 7 days. For guest users: 24 hours. Your session persists even if you close the browser or refresh the page. After expiration, you'll need to login again.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Can I share my favorites with others?</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Currently, favorites are personal to your account. They cannot be shared directly. However, you can manually share supplier information by copying the supplier name or details.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>What happens to my data if I logout?</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Your data (favorites, notes, messages) is saved on our secure servers. When you login again, all your data will be there. You can access it from any device as long as you login with the same email.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>How do I reset my password?</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We use Walmart SSO for secure authentication. If you're using your Walmart ID, manage your password through your Walmart account. For guest accounts, no password is needed - just login with your email.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Can I delete my account?</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>For now, accounts don't need to be deleted - you can simply not login. If you need to delete your data, please contact support with your email address.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>What's the difference between favorites and notes?</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p><strong>Favorites:</strong> Quick way to save suppliers you like. Shows just the supplier name and date. <strong>Notes:</strong> Detailed information about suppliers. You can add custom text and edit anytime. Use notes for specific feedback or important details.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Management -->
+            <div class="section">
+                <h2>Account & Privacy</h2>
+                
+                <h3>Your Data is Safe</h3>
+                <p>All your data (favorites, notes, messages) is stored securely on our servers. Only you can access your account with your unique session token.</p>
+                
+                <h3>Session Management</h3>
+                <ul>
+                    <li>Your session token is stored in your browser locally</li>
+                    <li>Nobody else can access your account on this device</li>
+                    <li>Sessions automatically expire for security</li>
+                    <li>You can logout anytime from the user menu</li>
+                </ul>
+                
+                <h3>Privacy</h3>
+                <ul>
+                    <li>Your email is used only for account identification</li>
+                    <li>No personal information is shared with suppliers</li>
+                    <li>Supplier data is aggregated from public sources</li>
+                    <li>Your notes are private and visible only to you</li>
+                </ul>
+            </div>
+            
+            <!-- Tips & Best Practices -->
+            <div class="section">
+                <h2>Tips & Best Practices</h2>
+                
+                <h3>Search Tips</h3>
+                <ul>
+                    <li>Use specific keywords for better results</li>
+                    <li>Try searching by product name, category, or location</li>
+                    <li>Use filters to narrow down large result sets</li>
+                    <li>Check multiple pages for more options</li>
+                </ul>
+                
+                <h3>Favorite Organization</h3>
+                <ul>
+                    <li>Save suppliers you frequently use as favorites</li>
+                    <li>Use notes to add context to your favorites</li>
+                    <li>Regularly review and clean up old favorites</li>
+                    <li>Add notes about pricing, quality, or delivery</li>
+                </ul>
+                
+                <h3>General Best Practices</h3>
+                <ul>
+                    <li>Review supplier ratings and Walmart verification status</li>
+                    <li>Check AI scores for supplier quality insights</li>
+                    <li>Use notes to track supplier performance over time</li>
+                    <li>Compare multiple suppliers before making decisions</li>
+                    <li>Export results for offline analysis or sharing</li>
+                </ul>
+            </div>
+            
+            <!-- Support -->
+            <div class="section">
+                <h2>Need More Help?</h2>
+                
+                <h3>Troubleshooting</h3>
+                <p><strong>Login doesn't work:</strong> Clear your browser cache and try again. Make sure your email address is valid.</p>
+                <p><strong>Data not showing:</strong> Refresh the page (Ctrl+R). Check that you're logged in by looking at the user menu.</p>
+                <p><strong>Pages loading slowly:</strong> This is normal for large result sets. Use filters to reduce the number of items displayed.</p>
+                <p><strong>Can't find a supplier:</strong> Try different search terms or use filters. Check spelling and variations.</p>
+                
+                <h3>Contact Support</h3>
+                <p>For technical issues or feature requests, please contact the development team with:</p>
+                <ul>
+                    <li>Your email address</li>
+                    <li>Description of the issue</li>
+                    <li>Steps to reproduce the problem</li>
+                    <li>Browser and device information</li>
+                </ul>
+            </div>
+            
+            <!-- Footer -->
+            <div class="section" style="text-align: center; border-top: 1px solid #eee; padding-top: 20px; margin-top: 40px;">
+                <p style="color: #999; font-size: 14px;">Supplier Hub v2.0 | Built with modern web technologies | All rights reserved</p>
+                <button class="btn" style="margin-top: 20px;" onclick="window.history.back()">Back to Dashboard</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleFaq(element) {
+            const item = element.parentElement;
+            item.classList.toggle('open');
+            item.querySelector('.faq-answer').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
