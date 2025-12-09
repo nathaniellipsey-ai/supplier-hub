@@ -2344,10 +2344,57 @@ async function searchSuppliersFromAPI(query) {
             return suppliers;
         }
 
-        const allSuppliers = generateSuppliers();
-        let filteredSuppliers = [...allSuppliers];
+        // Load suppliers from API instead of generating locally
+        let allSuppliers = [];
+        let filteredSuppliers = [];
         let currentPage = 1;
         const itemsPerPage = 20;
+        
+        // Fetch suppliers from API on page load
+        async function loadSuppliersFromAPI() {
+            try {
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                    ? 'http://localhost:8000/api/suppliers?limit=5000'
+                    : `https://${window.location.hostname}/api/suppliers?limit=5000`;
+                
+                console.log('[loadSuppliersFromAPI] Fetching from:', apiUrl);
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('[loadSuppliersFromAPI] Received:', data.count, 'suppliers');
+                
+                allSuppliers = data.suppliers || [];
+                filteredSuppliers = [...allSuppliers];
+                
+                if (allSuppliers.length === 0) {
+                    console.warn('[loadSuppliersFromAPI] No suppliers returned, falling back to generated data');
+                    allSuppliers = generateSuppliers();
+                    filteredSuppliers = [...allSuppliers];
+                }
+                
+                // Initialize filters now that we have data
+                initializeFilters();
+                updateDisplay();
+            } catch (error) {
+                console.error('[loadSuppliersFromAPI] Error:', error);
+                console.warn('[loadSuppliersFromAPI] Falling back to generated data');
+                allSuppliers = generateSuppliers();
+                filteredSuppliers = [...allSuppliers];
+                initializeFilters();
+                updateDisplay();
+            }
+        }
+        
+        // Load suppliers when page is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadSuppliersFromAPI);
+        } else {
+            loadSuppliersFromAPI();
+        }
 
         // Toggle filter section collapse
         function toggleFilterSection(sectionId) {
