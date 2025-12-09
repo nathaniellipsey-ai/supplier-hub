@@ -185,6 +185,64 @@
         .faq-item.open .toggle-icon {
             transform: rotate(180deg);
         }
+        
+        .help-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .help-controls input,
+        .help-controls select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        .help-controls input {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .help-controls select {
+            min-width: 150px;
+        }
+        
+        .section.hidden {
+            display: none;
+        }
+        
+        .faq-item.hidden {
+            display: none;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 16px;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-tag {
+            display: inline-block;
+            background: #e8f4ff;
+            color: #0071ce;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -195,8 +253,25 @@
         </div>
         
         <div class="content">
+            <!-- Search & Filter Controls -->
+            <div class="help-controls">
+                <input type="text" id="searchInput" placeholder="Search help topics..." aria-label="Search help topics">
+                <select id="categoryFilter" aria-label="Filter by category">
+                    <option value="all">All Topics</option>
+                    <option value="getting-started">Getting Started</option>
+                    <option value="features">Features</option>
+                    <option value="how-to">How-To Guides</option>
+                    <option value="faq">FAQ</option>
+                    <option value="account">Account & Privacy</option>
+                    <option value="tips">Tips & Best Practices</option>
+                    <option value="support">Support</option>
+                </select>
+                <button class="btn" onclick="resetFilters()">Reset</button>
+            </div>
+            <div id="noResults" class="no-results" style="display: none;">No results found. Try different search terms.</div>
+            
             <!-- Getting Started -->
-            <div class="section">
+            <div class="section" data-category="getting-started">
                 <h2>Getting Started</h2>
                 <h3>Welcome to Supplier Hub!</h3>
                 <p>Supplier Hub is a powerful platform for searching, filtering, and managing supplier information. Whether you're looking for specific suppliers or want to maintain a curated list of favorites, this guide will help you get started.</p>
@@ -212,7 +287,7 @@
             </div>
             
             <!-- Core Features -->
-            <div class="section">
+            <div class="section" data-category="features">
                 <h2>Core Features</h2>
                 
                 <div class="feature-grid">
@@ -244,7 +319,7 @@
             </div>
             
             <!-- How-To Guides -->
-            <div class="section">
+            <div class="section" data-category="how-to">
                 <h2>How-To Guides</h2>
                 
                 <h3>How to Add a Favorite</h3>
@@ -305,7 +380,7 @@
             </div>
             
             <!-- FAQ -->
-            <div class="section">
+            <div class="section" data-category="faq">
                 <h2>Frequently Asked Questions</h2>
                 
                 <div class="faq-item">
@@ -380,7 +455,7 @@
             </div>
             
             <!-- Account Management -->
-            <div class="section">
+            <div class="section" data-category="account">
                 <h2>Account & Privacy</h2>
                 
                 <h3>Your Data is Safe</h3>
@@ -404,7 +479,7 @@
             </div>
             
             <!-- Tips & Best Practices -->
-            <div class="section">
+            <div class="section" data-category="tips">
                 <h2>Tips & Best Practices</h2>
                 
                 <h3>Search Tips</h3>
@@ -434,7 +509,7 @@
             </div>
             
             <!-- Support -->
-            <div class="section">
+            <div class="section" data-category="support">
                 <h2>Need More Help?</h2>
                 
                 <h3>Troubleshooting</h3>
@@ -466,6 +541,50 @@
             const item = element.parentElement;
             item.classList.toggle('open');
             item.querySelector('.faq-answer').classList.toggle('active');
+        }
+        
+        // Search and filter functionality
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const noResults = document.getElementById('noResults');
+        
+        searchInput.addEventListener('input', filterContent);
+        categoryFilter.addEventListener('change', filterContent);
+        
+        function filterContent() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const category = categoryFilter.value;
+            const sections = document.querySelectorAll('.section[data-category]');
+            const allSections = document.querySelectorAll('.section');
+            let visibleCount = 0;
+            
+            allSections.forEach(section => {
+                // Skip the no-results message
+                if (!section.dataset.category) return;
+                
+                const categoryMatch = category === 'all' || section.dataset.category === category;
+                const text = section.textContent.toLowerCase();
+                const searchMatch = searchTerm === '' || text.includes(searchTerm);
+                
+                if (categoryMatch && searchMatch) {
+                    section.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    section.classList.add('hidden');
+                }
+            });
+            
+            // Show "no results" message if nothing matches
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+        
+        function resetFilters() {
+            searchInput.value = '';
+            categoryFilter.value = 'all';
+            noResults.style.display = 'none';
+            document.querySelectorAll('.section[data-category]').forEach(section => {
+                section.classList.remove('hidden');
+            });
         }
     </script>
 </body>

@@ -2356,9 +2356,7 @@ async function searchSuppliersFromAPI(query) {
         // Fetch suppliers from API on page load
         async function loadSuppliersFromAPI() {
             try {
-                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                    ? 'http://localhost:8000/api/suppliers?limit=5000'
-                    : `https://${window.location.hostname}/api/suppliers?limit=5000`;
+                const apiUrl = `${API_URL}/api/suppliers?skip=0&limit=5000`;
                 
                 console.log('[loadSuppliersFromAPI] Fetching from:', apiUrl);
                 const response = await fetch(apiUrl);
@@ -3457,6 +3455,174 @@ async function searchSuppliersFromAPI(query) {
             return true;
         }
 
+        function showWalmartSSO() {
+            // Close the dropdown first
+            const overlay = document.getElementById('userDropdownOverlay');
+            if (overlay) overlay.remove();
+            const dd = document.querySelector('.user-dropdown');
+            if (dd) dd.remove();
+            
+            // Show SSO modal
+            const modalHTML = `
+                <div id="ssoModal" class="modal" style="display: flex;">
+                    <div class="modal-content" style="width: 400px; max-width: 90vw;">
+                        <div class="modal-header">
+                            <h2>🏪 WALMART SSO LOGIN</h2>
+                            <button class="modal-close" onclick="document.getElementById('ssoModal').remove()" aria-label="Close">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <form onsubmit="submitSSO(event)" style="display: flex; flex-direction: column; gap: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 600;">Walmart ID</label>
+                                    <input type="text" id="walmartId" placeholder="e.g., M12345" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" required>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 600;">Email</label>
+                                    <input type="email" id="ssoEmail" placeholder="your.email@walmart.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" required>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 600;">Full Name</label>
+                                    <input type="text" id="ssoName" placeholder="John Doe" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" required>
+                                </div>
+                                <button type="submit" class="btn" style="background: #0071ce; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 10px;">
+                                    LOGIN WITH WALMART ID
+                                </button>
+                                <button type="button" onclick="showGuestLogin()" class="btn" style="background: #f5f5f5; color: #333; padding: 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    or Continue as Guest
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+        
+        function showGuestLogin() {
+            // Close SSO modal if open
+            const ssoModal = document.getElementById('ssoModal');
+            if (ssoModal) ssoModal.remove();
+            
+            // Show guest login modal
+            const modalHTML = `
+                <div id="guestModal" class="modal" style="display: flex;">
+                    <div class="modal-content" style="width: 400px; max-width: 90vw;">
+                        <div class="modal-header">
+                            <h2>👤 GUEST LOGIN</h2>
+                            <button class="modal-close" onclick="document.getElementById('guestModal').remove()" aria-label="Close">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <form onsubmit="submitGuestLogin(event)" style="display: flex; flex-direction: column; gap: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 600;">Email</label>
+                                    <input type="email" id="guestEmail" placeholder="your.email@company.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" required>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 600;">Full Name</label>
+                                    <input type="text" id="guestName" placeholder="John Doe" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" required>
+                                </div>
+                                <button type="submit" class="btn" style="background: #0071ce; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 10px;">
+                                    CONTINUE AS GUEST
+                                </button>
+                                <button type="button" onclick="showWalmartSSO()" class="btn" style="background: #f5f5f5; color: #333; padding: 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    or Login with Walmart ID
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+        
+        async function submitSSO(event) {
+            event.preventDefault();
+            const walmartId = document.getElementById('walmartId').value;
+            const email = document.getElementById('ssoEmail').value;
+            const name = document.getElementById('ssoName').value;
+            
+            try {
+                const params = new URLSearchParams({
+                    walmart_id: walmartId,
+                    email: email,
+                    name: name
+                });
+                
+                const response = await fetch(`${API_URL}/api/auth/sso?${params}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) throw new Error('SSO login failed');
+                
+                const data = await response.json();
+                
+                // Save session
+                localStorage.setItem('sessionToken', data.session_token);
+                localStorage.setItem('currentUser', JSON.stringify({
+                    walmart_id: walmartId,
+                    email: email,
+                    name: name
+                }));
+                
+                // Update authClient if available
+                if (authClient) {
+                    authClient.sessionToken = data.session_token;
+                    authClient.isAuthenticated = true;
+                }
+                
+                showNotification('✅ Successfully logged in with Walmart SSO!');
+                document.getElementById('ssoModal')?.remove();
+                location.reload();
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        }
+        
+        async function submitGuestLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('guestEmail').value;
+            const name = document.getElementById('guestName').value;
+            
+            try {
+                const params = new URLSearchParams({
+                    email: email,
+                    name: name
+                });
+                
+                const response = await fetch(`${API_URL}/api/auth/guest-login?${params}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) throw new Error('Guest login failed');
+                
+                const data = await response.json();
+                
+                // Save session
+                localStorage.setItem('sessionToken', data.session_token);
+                localStorage.setItem('currentUser', JSON.stringify({
+                    email: email,
+                    name: name,
+                    is_guest: true
+                }));
+                
+                // Update authClient if available
+                if (authClient) {
+                    authClient.sessionToken = data.session_token;
+                    authClient.isAuthenticated = true;
+                }
+                
+                showNotification('✅ Successfully logged in as guest!');
+                document.getElementById('guestModal')?.remove();
+                location.reload();
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        }
+        
         function toggleUserDropdown(event) {
             event.stopPropagation();
             
@@ -3488,12 +3654,21 @@ async function searchSuppliersFromAPI(query) {
                 dropdownDiv.className = 'user-dropdown';
                 dropdownDiv.style.top = (rect.bottom + 10) + 'px';
                 dropdownDiv.style.right = (window.innerWidth - rect.right) + 'px';
-                dropdownDiv.innerHTML = `
-                    <div class="dropdown-item" onclick="window.location.href='inbox.html'">Inbox</div>
-                    <div class="dropdown-item" onclick="window.location.href='my-favorites.html'">My Favorites (<span id="favCountDrop">${userData?.favorites?.length || 0}</span>)</div>
-                    <div class="dropdown-item" onclick="window.location.href='my-notes.html'">My Notes</div>
+                
+                // Check if user is authenticated
+                const isAuth = authClient && authClient.isAuthenticated;
+                
+                dropdownDiv.innerHTML = isAuth ? `
+                    <div class="dropdown-item" onclick="window.location.href='inbox.html'">📬 Inbox</div>
+                    <div class="dropdown-item" onclick="window.location.href='my-favorites.html'">❤️ My Favorites (<span id="favCountDrop">${userData?.favorites?.length || 0}</span>)</div>
+                    <div class="dropdown-item" onclick="window.location.href='my-notes.html'">📝 My Notes</div>
                     <div class="dropdown-divider"></div>
-                    <div class="dropdown-item" onclick="logout()">Logout</div>
+                    <div class="dropdown-item" onclick="logout()">🚪 Logout</div>
+                ` : `
+                    <div class="dropdown-item" style="background: #0071ce; color: white; border-radius: 4px; margin: 10px; padding: 12px; text-align: center; cursor: pointer;" onclick="showWalmartSSO()">
+                        🏪 WALMART SSO LOGIN
+                    </div>
+                    <div class="dropdown-item" onclick="showGuestLogin()">Guest Login</div>
                 `;
                 
                 document.body.appendChild(overlayDiv);

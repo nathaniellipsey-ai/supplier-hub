@@ -221,6 +221,128 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        .email-subscriptions {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .subscriptions-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .subscription-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .subscription-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        
+        .subscription-email {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .subscription-status {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #333;
+            margin: 0;
+            font-size: 20px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-actions .btn {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -234,7 +356,49 @@
         </div>
         
         <div class="content">
+            <!-- Email Subscriptions Section -->
+            <div class="email-subscriptions">
+                <div class="subscriptions-title">
+                    📧 Email Subscriptions
+                </div>
+                <div class="subscription-list" id="subscriptionsList"></div>
+                <button class="btn" onclick="showAddEmailModal()" style="background: #0071ce; color: white; width: 100%;">
+                    + Add Email Address
+                </button>
+            </div>
+            
+            <!-- Messages Section -->
             <div id="messages-container"></div>
+        </div>
+    </div>
+    
+    <!-- Add Email Modal -->
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📧 Add Email Subscription</h2>
+                <button class="modal-close" onclick="closeEmailModal()">✕</button>
+            </div>
+            <div style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                Add an email address to pull personal emails into your inbox.
+            </div>
+            <form onsubmit="submitAddEmail(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="emailInput" placeholder="your.email@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Password / App Password</label>
+                    <input type="password" id="passwordInput" placeholder="Your email password or app-specific password" required>
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px; color: #666;">ℹ️ For Gmail, use an App Password. For Outlook, use your account password.</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn" onclick="closeEmailModal()">Cancel</button>
+                    <button type="submit" class="btn" style="background: #0071ce; color: white;">Add Email</button>
+                </div>
+            </form>
         </div>
     </div>
     
@@ -354,7 +518,80 @@
             return date.toLocaleDateString();
         }
         
-        // Load on page load
+        // Email Subscription Management
+        let emailSubscriptions = JSON.parse(localStorage.getItem('emailSubscriptions') || '[]');
+        
+        function loadSubscriptions() {
+            const list = document.getElementById('subscriptionsList');
+            if (emailSubscriptions.length === 0) {
+                list.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No email subscriptions yet. Add one to start pulling emails into your inbox.</p>';
+                return;
+            }
+            
+            list.innerHTML = emailSubscriptions.map((sub, idx) => `
+                <div class="subscription-item">
+                    <div class="subscription-item-info">
+                        <span class="subscription-email">${sub.email}</span>
+                        <span class="subscription-status">Active • ${sub.addedDate ? new Date(sub.addedDate).toLocaleDateString() : 'Recently added'}</span>
+                    </div>
+                    <button class="action-btn" onclick="removeSubscription(${idx})" style="background: #ffebee; color: #c62828;">
+                        Remove
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        function showAddEmailModal() {
+            document.getElementById('emailModal').classList.add('active');
+        }
+        
+        function closeEmailModal() {
+            document.getElementById('emailModal').classList.remove('active');
+            document.getElementById('emailInput').value = '';
+            document.getElementById('passwordInput').value = '';
+        }
+        
+        async function submitAddEmail(event) {
+            event.preventDefault();
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            
+            // Add subscription to local storage
+            emailSubscriptions.push({
+                email: email,
+                password: password,  // In production, this should be encrypted!
+                addedDate: new Date().toISOString(),
+                active: true
+            });
+            
+            localStorage.setItem('emailSubscriptions', JSON.stringify(emailSubscriptions));
+            
+            // In production, you would:
+            // 1. Encrypt the password before storing
+            // 2. Send to backend API: POST /api/inbox/subscribe-email
+            // 3. Backend would validate and start pulling emails
+            
+            loadSubscriptions();
+            closeEmailModal();
+            alert('✅ Email subscription added! We\'ll start pulling emails from ' + email + ' shortly.');
+        }
+        
+        function removeSubscription(index) {
+            if (confirm('Remove this email subscription?')) {
+                const email = emailSubscriptions[index].email;
+                emailSubscriptions.splice(index, 1);
+                localStorage.setItem('emailSubscriptions', JSON.stringify(emailSubscriptions));
+                
+                // In production, you would:
+                // POST /api/inbox/unsubscribe-email with email parameter
+                
+                loadSubscriptions();
+                alert('✅ Email subscription removed: ' + email);
+            }
+        }
+        
+        // Load subscriptions on page load
+        loadSubscriptions();
         loadInbox();
     </script>
 </body>
