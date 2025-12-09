@@ -2373,15 +2373,14 @@ async function searchSuppliersFromAPI(query) {
                 allSuppliers = data.suppliers || [];
                 filteredSuppliers = [...allSuppliers];
                 
-                if (allSuppliers.length === 0) {
-                    console.warn('[loadSuppliersFromAPI] No suppliers returned, falling back to generated data');
-                    allSuppliers = generateSuppliers();
-                    filteredSuppliers = [...allSuppliers];
-                }
-                
                 // Update connection status
                 const statusEl = document.getElementById('spStatus');
-                if (statusEl) statusEl.textContent = `✅ Connected (${allSuppliers.length} suppliers)`;
+                if (allSuppliers.length === 0) {
+                    if (statusEl) statusEl.textContent = `📊 No suppliers (0) - Import data via CSV`;
+                    showNotification('ℹ️ No suppliers loaded. Use CSV import to add suppliers.');
+                } else {
+                    if (statusEl) statusEl.textContent = `✅ Connected (${allSuppliers.length} suppliers)`;
+                }
                 
                 // Initialize filters now that we have data
                 initializeFilters();
@@ -2389,14 +2388,14 @@ async function searchSuppliersFromAPI(query) {
                 loadStatsFromAPI();
             } catch (error) {
                 console.error('[loadSuppliersFromAPI] Error:', error);
-                console.warn('[loadSuppliersFromAPI] Falling back to generated data');
                 
-                // Update status to show fallback
+                // Show error to user
                 const statusEl = document.getElementById('spStatus');
-                if (statusEl) statusEl.textContent = '⚠️ Using local data';
+                if (statusEl) statusEl.textContent = `❌ Connection error - ${error.message}`;
+                showNotification(`⚠️ Error loading suppliers: ${error.message}`);
                 
-                allSuppliers = generateSuppliers();
-                filteredSuppliers = [...allSuppliers];
+                allSuppliers = [];
+                filteredSuppliers = [];
                 initializeFilters();
                 updateDisplay();
             }
@@ -2972,36 +2971,39 @@ async function searchSuppliersFromAPI(query) {
         }
 
         // Apply filters
-        function applyFilters() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const selectedVendors = Array.from(document.querySelectorAll('.vendor-filter:checked')).map(cb => cb.value);
+        async function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
             const selectedCategories = Array.from(document.querySelectorAll('.category-filter:checked')).map(cb => cb.value);
-            const selectedProducts = Array.from(document.querySelectorAll('.product-filter:checked')).map(cb => cb.value);
             const selectedRegions = Array.from(document.querySelectorAll('.region-filter:checked')).map(cb => cb.value);
-            const selectedCerts = Array.from(document.querySelectorAll('.cert-filter:checked')).map(cb => cb.value);
-            const selectedSizes = Array.from(document.querySelectorAll('.size-filter:checked')).map(cb => cb.value);
-            const selectedPrices = Array.from(document.querySelectorAll('.price-filter:checked')).map(cb => cb.value);
-
-            filteredSuppliers = allSuppliers.filter(supplier => {
-                const matchesSearch = !searchTerm || 
-                    supplier.name.toLowerCase().includes(searchTerm) ||
-                    supplier.category.toLowerCase().includes(searchTerm) ||
-                    supplier.products.some(p => p.toLowerCase().includes(searchTerm)) ||
-                    supplier.location.toLowerCase().includes(searchTerm);
-
-                const matchesVendor = selectedVendors.length === 0 || selectedVendors.includes(supplier.name);
-                const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(supplier.category);
-                const matchesProduct = selectedProducts.length === 0 || supplier.products.some(p => selectedProducts.includes(p));
-                const matchesRegion = selectedRegions.length === 0 || selectedRegions.includes(supplier.region);
-                const matchesCert = selectedCerts.length === 0 || supplier.certifications.some(c => selectedCerts.includes(c));
-                const matchesSize = selectedSizes.length === 0 || selectedSizes.includes(supplier.size);
-                const matchesPrice = selectedPrices.length === 0 || selectedPrices.includes(supplier.priceRange);
-
-                return matchesSearch && matchesVendor && matchesCategory && matchesProduct && matchesRegion && matchesCert && matchesSize && matchesPrice;
-            });
-
-            currentPage = 1;
-            renderResults();
+            
+            // Build API URL with filter parameters
+            let apiUrl = `${API_URL}/api/suppliers?skip=0&limit=5000`;
+            
+            if (searchTerm) {
+                apiUrl += `&search=${encodeURIComponent(searchTerm)}`;
+            }
+            
+            // For now, use first selected category if available
+            if (selectedCategories.length > 0) {
+                apiUrl += `&category=${encodeURIComponent(selectedCategories[0])}`;
+            }
+            
+            // For now, use first selected region if available
+            if (selectedRegions.length > 0) {
+                apiUrl += `&location=${encodeURIComponent(selectedRegions[0])}`;
+            }
+            
+            try {
+                const response = await fetch(apiUrl, { mode: 'cors', credentials: 'omit' });
+                const data = await response.json();
+                
+                filteredSuppliers = data.suppliers || [];
+                currentPage = 1;
+                renderResults();
+            } catch (error) {
+                console.error('Error applying filters:', error);
+                showNotification('⚠️ Error applying filters');
+            }
         }
 
         // Render catalog card
@@ -3713,10 +3715,29 @@ async function searchSuppliersFromAPI(query) {
                     // Remove from favorites
                     favs.splice(index, 1);
                     showNotification('❤️ Removed from favorites');
+                    
+                    // Sync to API
+                    try {
+                        const params = new URLSearchParams({ supplier_id: supplierId });
+                        await fetch(`${API_URL}/api/favorites/remove?${params}`, { method: 'POST' });
+                    } catch (error) {
+                        console.error('Failed to sync removal to server:', error);
+                    }
                 } else {
                     // Add to favorites
                     favs.push({ id: supplierId, name: supplier.name, category: supplier.category });
                     showNotification('❤️ Added to favorites!');
+                    
+                    // Sync to API
+                    try {
+                        const params = new URLSearchParams({
+                            supplier_id: supplierId,
+                            supplier_name: supplier.name
+                        });
+                        await fetch(`${API_URL}/api/favorites/add?${params}`, { method: 'POST' });
+                    } catch (error) {
+                        console.error('Failed to sync to server:', error);
+                    }
                 }
 
                 localStorage.setItem('supplier_favorites', JSON.stringify(favs));
@@ -3810,16 +3831,47 @@ async function searchSuppliersFromAPI(query) {
             if (modal) modal.remove();
         }
 
-        function saveNote(supplierId) {
+        async function saveNote(supplierId) {
             const noteText = document.getElementById('noteTextarea').value.trim();
             const notes = JSON.parse(localStorage.getItem('supplier_notes') || '{}');
 
             if (noteText) {
                 notes[supplierId] = noteText;
                 showNotification('✅ Note saved!');
+                
+                // Sync to API
+                try {
+                    const params = new URLSearchParams({
+                        supplier_id: supplierId,
+                        content: noteText
+                    });
+                    const response = await fetch(`${API_URL}/api/notes/add?${params}`, {
+                        method: 'POST'
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to sync note to server');
+                    }
+                } catch (error) {
+                    console.error('Error syncing note:', error);
+                }
             } else {
                 delete notes[supplierId];
                 showNotification('🗑️ Note deleted');
+                
+                // Sync deletion to API
+                try {
+                    const params = new URLSearchParams({
+                        supplier_id: supplierId
+                    });
+                    const response = await fetch(`${API_URL}/api/notes/delete?${params}`, {
+                        method: 'POST'
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to sync deletion to server');
+                    }
+                } catch (error) {
+                    console.error('Error syncing deletion:', error);
+                }
             }
 
             localStorage.setItem('supplier_notes', JSON.stringify(notes));
@@ -3827,13 +3879,28 @@ async function searchSuppliersFromAPI(query) {
             closeNoteModal();
         }
 
-        function deleteNote(supplierId) {
+        async function deleteNote(supplierId) {
             const notes = JSON.parse(localStorage.getItem('supplier_notes') || '{}');
             if (notes[supplierId]) {
                 delete notes[supplierId];
                 localStorage.setItem('supplier_notes', JSON.stringify(notes));
                 updateNoteButtons();
                 showNotification('🗑️ Note deleted');
+                
+                // Sync to API
+                try {
+                    const params = new URLSearchParams({
+                        supplier_id: supplierId
+                    });
+                    const response = await fetch(`${API_URL}/api/notes/delete?${params}`, {
+                        method: 'POST'
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to sync deletion to server');
+                    }
+                } catch (error) {
+                    console.error('Error syncing deletion:', error);
+                }
             }
             closeNoteModal();
         }

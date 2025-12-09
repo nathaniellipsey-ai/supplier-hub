@@ -301,29 +301,37 @@
         
         let currentEditNoteId = null;
         
+        const API_URL = '/';  // or your API URL
+        
         async function getNotes() {
-            const response = await fetch(`${API_BASE}/notes`);
+            const response = await fetch(`${API_URL}api/notes`);
             if (!response.ok) throw new Error('Failed to fetch notes');
             return response.json();
         }
         
         async function addNote(supplierId, content) {
             const params = new URLSearchParams({ supplier_id: supplierId, content });
-            const response = await fetch(`${API_BASE}/notes/add?${params}`, { method: 'POST' });
+            const response = await fetch(`${API_URL}api/notes/add?${params}`, { method: 'POST' });
             if (!response.ok) throw new Error('Failed to add note');
             return response.json();
         }
         
         async function updateNote(noteId, content) {
-            const params = new URLSearchParams({ note_id: noteId, content });
-            const response = await fetch(`${API_BASE}/notes/update?${params}`, { method: 'POST' });
+            // Extract supplier_id from note_id (format: "user_id_supplier_id")
+            const parts = noteId.split('_');
+            const supplierId = parts[parts.length - 1];
+            const params = new URLSearchParams({ supplier_id: supplierId, content });
+            const response = await fetch(`${API_URL}api/notes/update?${params}`, { method: 'POST' });
             if (!response.ok) throw new Error('Failed to update note');
             return response.json();
         }
         
         async function deleteNote(noteId) {
-            const params = new URLSearchParams({ note_id: noteId });
-            const response = await fetch(`${API_BASE}/notes/delete?${params}`, { method: 'POST' });
+            // Extract supplier_id from note_id (format: "user_id_supplier_id")
+            const parts = noteId.split('_');
+            const supplierId = parts[parts.length - 1];
+            const params = new URLSearchParams({ supplier_id: supplierId });
+            const response = await fetch(`${API_URL}api/notes/delete?${params}`, { method: 'POST' });
             if (!response.ok) throw new Error('Failed to delete note');
             return response.json();
         }

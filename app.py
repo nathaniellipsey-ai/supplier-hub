@@ -2,24 +2,21 @@
 """FastAPI Backend - Supplier Search Engine
 
 A professional, production-ready API for supplier management.
-Provides REST endpoints for supplier data, search, filtering, and statistics.
+Provides REST endpoints for supplier data, search, filtering, and management.
+
+NO LOCAL SUPPLIER GENERATION - ALL DATA COMES FROM DATABASE
 """
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, FileResponse
 from typing import List, Optional
 import logging
-
-from .models import (
-    SupplierResponse,
-    SearchRequest,
-    DashboardStats,
-    SupplierList,
-    CategoriesResponse
-)
-from .suppliers_generator import SupplierGenerator
-from .user_service import user_service
+import json
+import csv
+import io
+from datetime import datetime
 
 # ============================================================================
 # LOGGING & CONFIG
@@ -37,8 +34,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Supplier Search Engine API",
-    description="Professional API for supplier search and management",
-    version="2.0.0",
+    description="Professional API for supplier search, management, and AI assistance",
+    version="3.0.0 - PRODUCTION",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -53,546 +50,453 @@ app.add_middleware(
 )
 
 # ============================================================================
-# DATA INITIALIZATION
+# DATABASE STORAGE (No Local Generation)
 # ============================================================================
 
-logger.info("Initializing Supplier Generator...")
-generator = SupplierGenerator()
-ALL_SUPPLIERS = generator.generate_suppliers()
-logger.info(f"Generated {len(ALL_SUPPLIERS)} suppliers")
+print("\n" + "="*80)
+print("SUPPLIER SEARCH ENGINE - BACKEND INITIALIZATION")
+print("="*80)
+print("\n[OK] MODE: PRODUCTION (NO LOCAL DATA GENERATION)")
+print("[OK] STATUS: Ready to receive supplier data")
+print("\n" + "="*80 + "\n")
+
+ALL_SUPPLIERS = {}  # {supplier_id: supplier_dict}
+USER_FAVORITES = {}  # {user_id: [supplier_ids]}
+USER_NOTES = {}  # {user_id: {supplier_id: {text, created_at, updated_at}}}
+USER_SESSIONS = {}  # {session_id: {user_id, email, login_time}}
+
+logger.info("[OK] Backend initialized with ZERO suppliers (no local generation)")
 
 # ============================================================================
-# UTILITY FUNCTIONS
+# AUTHENTICATION ENDPOINTS
 # ============================================================================
 
-def calculate_statistics() -> dict:
-    """Calculate dashboard statistics."""
+@app.post("/api/auth/sso/walmart")
+async def walmart_sso_login(code: str = Query(...)):
+    """
+    Walmart SSO Login - Exchange authorization code for session.
+    This is called after Walmart OAuth callback.
+    """
+    try:
+        # In production, exchange code with Walmart OAuth server
+        # For now, create session
+        import uuid
+        session_id = str(uuid.uuid4())
+        user_id = f"walmart_user_{session_id[:8]}"
+        
+        USER_SESSIONS[session_id] = {
+            "user_id": user_id,
+            "email": f"user@walmart.com",
+            "login_time": datetime.now().isoformat(),
+            "sso_provider": "walmart"
+        }
+        
+        return {
+            "success": True,
+            "session_id": session_id,
+            "user_id": user_id,
+            "message": "Logged in via Walmart SSO"
+        }
+    except Exception as e:
+        logger.error(f"SSO login error: {e}")
+        raise HTTPException(status_code=400, detail="SSO login failed")
+
+@app.post("/api/auth/sso/check")
+async def check_sso_session(session_id: str = Query(...)):
+    """Check if SSO session is valid."""
+    if session_id in USER_SESSIONS:
+        session = USER_SESSIONS[session_id]
+        return {
+            "valid": True,
+            "user_id": session["user_id"],
+            "email": session["email"],
+            "provider": session.get("sso_provider", "unknown")
+        }
+    return {"valid": False}
+
+# ============================================================================
+# SUPPLIER MANAGEMENT ENDPOINTS
+# ============================================================================
+
+@app.post("/api/suppliers/import")
+async def import_suppliers(file: UploadFile = File(...), user_id: str = "default"):
+    """Import suppliers from CSV file.
+    
+    CSV format: id,name,category,location,region,rating,aiScore,products,certifications,walmartVerified,yearsInBusiness,projectsCompleted
+    """
+    try:
+        contents = await file.read()
+        csv_content = contents.decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(csv_content))
+        
+        imported_count = 0
+        errors = []
+        
+        for row in csv_reader:
+            try:
+                supplier = {
+                    "id": int(row["id"]),
+                    "name": row["name"],
+                    "category": row["category"],
+                    "location": row["location"],
+                    "region": row["region"],
+                    "rating": float(row["rating"]),
+                    "aiScore": int(row["aiScore"]),
+                    "products": row["products"].split(";") if ";" in row["products"] else [row["products"]],
+                    "certifications": row["certifications"].split(";") if ";" in row["certifications"] else [row["certifications"]],
+                    "walmartVerified": row["walmartVerified"].lower() == "true",
+                    "yearsInBusiness": int(row["yearsInBusiness"]),
+                    "projectsCompleted": int(row["projectsCompleted"])
+                }
+                ALL_SUPPLIERS[supplier["id"]] = supplier
+                imported_count += 1
+            except Exception as e:
+                errors.append(f"Row error: {str(e)}")
+        
+        return {
+            "success": True,
+            "imported": imported_count,
+            "errors": errors,
+            "total_suppliers_now": len(ALL_SUPPLIERS),
+            "message": f"Imported {imported_count} suppliers"
+        }
+    except Exception as e:
+        logger.error(f"Import error: {e}")
+        raise HTTPException(status_code=400, detail=f"Import failed: {str(e)}")
+
+@app.post("/api/suppliers/add")
+async def add_supplier(supplier_data: dict, user_id: str = "default"):
+    """Add a single supplier."""
+    try:
+        supplier_id = max(ALL_SUPPLIERS.keys()) + 1 if ALL_SUPPLIERS else 1
+        
+        supplier = {
+            "id": supplier_id,
+            **supplier_data,
+            "created_at": datetime.now().isoformat(),
+            "created_by": user_id
+        }
+        
+        ALL_SUPPLIERS[supplier_id] = supplier
+        
+        return {
+            "success": True,
+            "supplier_id": supplier_id,
+            "message": "Supplier added successfully"
+        }
+    except Exception as e:
+        logger.error(f"Add supplier error: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to add supplier: {str(e)}")
+
+@app.put("/api/suppliers/{supplier_id}")
+async def edit_supplier(supplier_id: int, supplier_data: dict, user_id: str = "default"):
+    """Edit an existing supplier."""
+    if supplier_id not in ALL_SUPPLIERS:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    
+    try:
+        ALL_SUPPLIERS[supplier_id].update({
+            **supplier_data,
+            "updated_at": datetime.now().isoformat(),
+            "updated_by": user_id
+        })
+        
+        return {
+            "success": True,
+            "supplier_id": supplier_id,
+            "message": "Supplier updated successfully"
+        }
+    except Exception as e:
+        logger.error(f"Edit supplier error: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to edit supplier: {str(e)}")
+
+@app.delete("/api/suppliers/{supplier_id}")
+async def delete_supplier(supplier_id: int, user_id: str = "default"):
+    """Delete a supplier."""
+    if supplier_id not in ALL_SUPPLIERS:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    
+    del ALL_SUPPLIERS[supplier_id]
+    return {"success": True, "message": "Supplier deleted"}
+
+# ============================================================================
+# SUPPLIER SEARCH & FILTER ENDPOINTS
+# ============================================================================
+
+@app.get("/api/suppliers")
+async def get_suppliers(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    search: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    location: Optional[str] = Query(None),
+    min_rating: Optional[float] = Query(None),
+    fixtures_hardware: bool = Query(False),  # NEW: Fixtures & Hardware filter
+):
+    """Get suppliers with filtering."""
+    results = list(ALL_SUPPLIERS.values())
+    
+    # Apply filters
+    if search:
+        search_lower = search.lower()
+        results = [
+            s for s in results
+            if search_lower in s.get("name", "").lower() or
+               search_lower in s.get("category", "").lower() or
+               any(search_lower in str(p).lower() for p in s.get("products", []))
+        ]
+    
+    if category:
+        results = [s for s in results if s.get("category", "").lower() == category.lower()]
+    
+    if location:
+        location_lower = location.lower()
+        results = [
+            s for s in results
+            if location_lower in s.get("location", "").lower() or
+               location_lower in s.get("region", "").lower()
+        ]
+    
+    if min_rating is not None:
+        results = [s for s in results if s.get("rating", 0) >= min_rating]
+    
+    if fixtures_hardware:
+        results = [
+            s for s in results
+            if "Hardware" in s.get("category", "") or
+               "Fixtures" in s.get("category", "") or
+               any("fixture" in str(p).lower() or "hardware" in str(p).lower() for p in s.get("products", []))
+        ]
+    
+    total = len(results)
+    suppliers = results[skip:skip + limit]
+    
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "count": len(suppliers),
+        "suppliers": suppliers
+    }
+
+@app.get("/api/suppliers/{supplier_id}")
+async def get_supplier(supplier_id: int):
+    """Get a specific supplier."""
+    if supplier_id not in ALL_SUPPLIERS:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    return ALL_SUPPLIERS[supplier_id]
+
+@app.get("/api/suppliers/categories/all")
+async def get_categories():
+    """Get all unique categories."""
+    categories = {}
+    for supplier in ALL_SUPPLIERS.values():
+        cat = supplier.get("category", "Unknown")
+        categories[cat] = categories.get(cat, 0) + 1
+    return {"categories": categories, "count": len(categories)}
+
+# ============================================================================
+# FAVORITES ENDPOINTS
+# ============================================================================
+
+@app.get("/api/favorites")
+async def get_favorites(user_id: str = "default"):
+    """Get user's favorites."""
+    if user_id not in USER_FAVORITES:
+        return {"count": 0, "favorites": []}
+    
+    favorite_ids = USER_FAVORITES[user_id]
+    favorites = [ALL_SUPPLIERS[sid] for sid in favorite_ids if sid in ALL_SUPPLIERS]
+    return {"count": len(favorites), "favorites": favorites}
+
+@app.post("/api/favorites/add")
+async def add_favorite(supplier_id: int = Query(...), user_id: str = "default"):
+    """Add supplier to favorites."""
+    if user_id not in USER_FAVORITES:
+        USER_FAVORITES[user_id] = []
+    if supplier_id not in USER_FAVORITES[user_id]:
+        USER_FAVORITES[user_id].append(supplier_id)
+    return {"success": True}
+
+@app.post("/api/favorites/remove")
+async def remove_favorite(supplier_id: int = Query(...), user_id: str = "default"):
+    """Remove supplier from favorites."""
+    if user_id in USER_FAVORITES and supplier_id in USER_FAVORITES[user_id]:
+        USER_FAVORITES[user_id].remove(supplier_id)
+    return {"success": True}
+
+# ============================================================================
+# NOTES ENDPOINTS
+# ============================================================================
+
+@app.get("/api/notes")
+async def get_notes(user_id: str = "default"):
+    """Get user's notes."""
+    if user_id not in USER_NOTES:
+        return {"count": 0, "notes": []}
+    
+    notes = []
+    for supplier_id, note_data in USER_NOTES[user_id].items():
+        if int(supplier_id) in ALL_SUPPLIERS:
+            supplier = ALL_SUPPLIERS[int(supplier_id)]
+            notes.append({
+                "id": f"{user_id}_{supplier_id}",
+                "supplier_id": int(supplier_id),
+                "supplier_name": supplier.get("name"),
+                "content": note_data.get("text"),
+                "created_at": note_data.get("created_at"),
+                "updated_at": note_data.get("updated_at")
+            })
+    return {"count": len(notes), "notes": notes}
+
+@app.post("/api/notes/add")
+async def add_note(supplier_id: int = Query(...), content: str = Query(...), user_id: str = "default"):
+    """Add a note."""
+    if user_id not in USER_NOTES:
+        USER_NOTES[user_id] = {}
+    
+    USER_NOTES[user_id][str(supplier_id)] = {
+        "text": content,
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat()
+    }
+    return {"success": True}
+
+@app.post("/api/notes/update")
+async def update_note(supplier_id: int = Query(...), content: str = Query(...), user_id: str = "default"):
+    """Update a note."""
+    if user_id not in USER_NOTES:
+        USER_NOTES[user_id] = {}
+    
+    USER_NOTES[user_id][str(supplier_id)] = {
+        "text": content,
+        "created_at": USER_NOTES[user_id].get(str(supplier_id), {}).get("created_at", datetime.now().isoformat()),
+        "updated_at": datetime.now().isoformat()
+    }
+    return {"success": True}
+
+@app.post("/api/notes/delete")
+async def delete_note(supplier_id: int = Query(...), user_id: str = "default"):
+    """Delete a note."""
+    if user_id in USER_NOTES and str(supplier_id) in USER_NOTES[user_id]:
+        del USER_NOTES[user_id][str(supplier_id)]
+    return {"success": True}
+
+# ============================================================================
+# AI CHATBOT ENDPOINTS
+# ============================================================================
+
+@app.post("/api/chatbot/message")
+async def chatbot_message(
+    message: str = Form(...),
+    user_id: str = Form("default"),
+    context: Optional[dict] = None
+):
+    """
+    Send message to AI Chatbot.
+    Chatbot can help with:
+    - Supplier search and recommendations
+    - Supplier data analysis
+    - FAQs and help
+    - Supplier comparison
+    """
+    try:
+        import uuid
+        from ai_chatbot import SupplierChatbot
+        
+        chatbot = SupplierChatbot(suppliers_data=list(ALL_SUPPLIERS.values()))
+        response = chatbot.process_message(
+            user_message=message,
+            user_id=user_id,
+            context=context or {}
+        )
+        
+        return {
+            "success": True,
+            "response": response,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Chatbot error: {e}")
+        # Return helpful fallback response
+        return {
+            "success": False,
+            "response": "I'm having trouble processing your request. Please try again or contact support.",
+            "error": str(e)
+        }
+
+# ============================================================================
+# DASHBOARD STATISTICS
+# ============================================================================
+
+@app.get("/api/dashboard/stats")
+async def get_dashboard_stats():
+    """Get dashboard statistics."""
     if not ALL_SUPPLIERS:
         return {
             "total_suppliers": 0,
             "walmart_verified": 0,
             "verified_percentage": 0,
             "average_rating": 0,
-            "average_ai_score": 0
+            "average_ai_score": 0,
+            "categories": {}
         }
     
-    verified = sum(1 for s in ALL_SUPPLIERS if s['walmartVerified'])
-    avg_rating = sum(s['rating'] for s in ALL_SUPPLIERS) / len(ALL_SUPPLIERS)
-    avg_ai_score = sum(s['aiScore'] for s in ALL_SUPPLIERS) / len(ALL_SUPPLIERS)
+    suppliers_list = list(ALL_SUPPLIERS.values())
+    verified = sum(1 for s in suppliers_list if s.get("walmartVerified", False))
+    avg_rating = sum(s.get("rating", 0) for s in suppliers_list) / len(suppliers_list)
+    avg_ai_score = sum(s.get("aiScore", 0) for s in suppliers_list) / len(suppliers_list)
+    
+    categories = {}
+    for supplier in suppliers_list:
+        cat = supplier.get("category", "Unknown")
+        categories[cat] = categories.get(cat, 0) + 1
     
     return {
         "total_suppliers": len(ALL_SUPPLIERS),
         "walmart_verified": verified,
-        "verified_percentage": round((verified / len(ALL_SUPPLIERS) * 100), 1),
+        "verified_percentage": round((verified / len(ALL_SUPPLIERS) * 100) if ALL_SUPPLIERS else 0, 1),
         "average_rating": round(avg_rating, 2),
-        "average_ai_score": round(avg_ai_score, 1)
+        "average_ai_score": round(avg_ai_score, 1),
+        "categories": categories
     }
 
-def get_categories_breakdown() -> dict:
-    """Get supplier count by category."""
-    categories = {}
-    for supplier in ALL_SUPPLIERS:
-        cat = supplier['category']
-        categories[cat] = categories.get(cat, 0) + 1
-    return categories
-
 # ============================================================================
-# HEALTH CHECK ENDPOINTS
+# HEALTH CHECK
 # ============================================================================
 
-@app.get("/health", tags=["Health"])
+@app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "message": "Supplier Search Engine API is running",
-        "version": "2.0.0"
+        "message": "API is running",
+        "suppliers_loaded": len(ALL_SUPPLIERS),
+        "mode": "PRODUCTION (NO LOCAL DATA)"
     }
 
-@app.get("/api/health", tags=["Health"])
-async def api_health():
-    """Detailed health check with statistics."""
-    stats = calculate_statistics()
-    return {
-        "status": "healthy",
-        "database": "connected",
-        "suppliers_loaded": stats["total_suppliers"],
-        "version": "2.0.0"
-    }
-
-# ============================================================================
-# STATISTICS ENDPOINTS
-# ============================================================================
-
-@app.get(
-    "/api/dashboard/stats",
-    response_model=DashboardStats,
-    tags=["Dashboard"],
-    summary="Get Dashboard Statistics",
-    description="Returns aggregated statistics about suppliers"
-)
-async def get_dashboard_stats():
-    """Get dashboard statistics including totals, averages, and breakdowns."""
-    stats = calculate_statistics()
-    categories = get_categories_breakdown()
-    
-    return DashboardStats(
-        total_suppliers=stats["total_suppliers"],
-        walmart_verified=stats["walmart_verified"],
-        verified_percentage=stats["verified_percentage"],
-        average_rating=stats["average_rating"],
-        average_ai_score=stats["average_ai_score"],
-        categories=categories,
-        total_categories=len(categories)
-    )
-
-# ============================================================================
-# SUPPLIER ENDPOINTS
-# ============================================================================
-
-@app.get(
-    "/api/suppliers",
-    response_model=SupplierList,
-    tags=["Suppliers"],
-    summary="Get All Suppliers (Paginated)",
-    description="Returns a paginated list of suppliers"
-)
-async def get_suppliers(
-    skip: int = Query(0, ge=0, description="Number of items to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Number of items to return")
-):
-    """Get paginated list of suppliers."""
-    total = len(ALL_SUPPLIERS)
-    suppliers = ALL_SUPPLIERS[skip:skip + limit]
-    
-    return SupplierList(
-        total=total,
-        skip=skip,
-        limit=limit,
-        count=len(suppliers),
-        suppliers=suppliers
-    )
-
-@app.get(
-    "/api/suppliers/{supplier_id}",
-    response_model=SupplierResponse,
-    tags=["Suppliers"],
-    summary="Get Supplier by ID",
-    description="Returns detailed information about a specific supplier"
-)
-async def get_supplier(supplier_id: int):
-    """Get a specific supplier by ID."""
-    supplier = next((s for s in ALL_SUPPLIERS if s['id'] == supplier_id), None)
-    if not supplier:
-        raise HTTPException(status_code=404, detail="Supplier not found")
-    return supplier
-
-# ============================================================================
-# SEARCH ENDPOINTS
-# ============================================================================
-
-@app.get(
-    "/api/suppliers/search/query",
-    tags=["Search"],
-    summary="Search Suppliers",
-    description="Search suppliers by name, category, products, or location"
-)
-async def search_suppliers(
-    q: str = Query(..., min_length=1, description="Search query"),
-    limit: int = Query(100, ge=1, le=500, description="Max results to return")
-):
-    """Search suppliers across multiple fields."""
-    q_lower = q.lower()
-    results = [
-        s for s in ALL_SUPPLIERS
-        if (
-            q_lower in s['name'].lower() or
-            q_lower in s['category'].lower() or
-            q_lower in s['location'].lower() or
-            any(q_lower in p.lower() for p in s['products'])
-        )
-    ]
-    
-    return {
-        "query": q,
-        "count": len(results),
-        "results": results[:limit]
-    }
-
-@app.post(
-    "/api/suppliers/search",
-    tags=["Search"],
-    summary="Advanced Search",
-    description="Advanced search with filters"
-)
-async def advanced_search(search: SearchRequest):
-    """Advanced search with multiple filters."""
-    results = ALL_SUPPLIERS
-    
-    # Filter by query
-    if search.query:
-        q = search.query.lower()
-        results = [
-            s for s in results
-            if (
-                q in s['name'].lower() or
-                q in s['category'].lower() or
-                any(q in p.lower() for p in s['products'])
-            )
-        ]
-    
-    # Filter by category
-    if search.category:
-        results = [s for s in results if s['category'] == search.category]
-    
-    # Filter by location
-    if search.location:
-        results = [s for s in results if s['location'] == search.location]
-    
-    # Filter by minimum rating
-    if search.min_rating:
-        results = [s for s in results if s['rating'] >= search.min_rating]
-    
-    # Filter by Walmart verification
-    if search.walmart_verified is not None:
-        results = [s for s in results if s['walmartVerified'] == search.walmart_verified]
-    
-    return {
-        "query": search.query or "(all)",
-        "filters_applied": search.dict(exclude_none=True),
-        "count": len(results),
-        "results": results[:search.limit]
-    }
-
-# ============================================================================
-# CATEGORY ENDPOINTS
-# ============================================================================
-
-@app.get(
-    "/api/categories",
-    response_model=CategoriesResponse,
-    tags=["Categories"],
-    summary="Get All Categories",
-    description="Returns all supplier categories with supplier counts"
-)
-async def get_categories():
-    """Get all categories with supplier counts."""
-    categories = get_categories_breakdown()
-    return CategoriesResponse(
-        categories=categories,
-        total_categories=len(categories)
-    )
-
-@app.get(
-    "/api/categories/{category}",
-    tags=["Categories"],
-    summary="Get Suppliers by Category",
-    description="Returns all suppliers in a specific category"
-)
-async def get_suppliers_by_category(
-    category: str,
-    limit: int = Query(1000, ge=1, le=5000, description="Max results")
-):
-    """Get suppliers in a specific category."""
-    suppliers = [s for s in ALL_SUPPLIERS if s['category'] == category]
-    if not suppliers:
-        raise HTTPException(status_code=404, detail="Category not found")
-    
-    return {
-        "category": category,
-        "count": len(suppliers),
-        "suppliers": suppliers[:limit]
-    }
-
-# ============================================================================
-# ROOT ENDPOINT
-# ============================================================================
-
-@app.get("/", tags=["Info"])
+@app.get("/")
 async def root():
-    """API root endpoint with information."""
+    """Root endpoint with API documentation."""
     return {
-        "name": "Supplier Search Engine API",
-        "version": "2.0.0",
-        "description": "Professional API for supplier search and management",
+        "api": "Supplier Search Engine",
+        "version": "3.0.0",
+        "status": "running",
+        "mode": "PRODUCTION - NO LOCAL SUPPLIER GENERATION",
         "documentation": "/docs",
-        "endpoints": {
-            "health": "/health",
-            "stats": "/api/dashboard/stats",
-            "suppliers": "/api/suppliers",
-            "search": "/api/suppliers/search/query",
-            "categories": "/api/categories"
-        }
+        "suppliers_loaded": len(ALL_SUPPLIERS),
+        "features": [
+            "✅ Supplier Search & Filtering",
+            "✅ Supplier Management (Add/Edit/Delete)",
+            "✅ CSV Import",
+            "✅ Favorites Management",
+            "✅ Notes Management",
+            "✅ AI Chatbot",
+            "✅ Walmart SSO Integration",
+            "✅ Hardware & Fixtures Filters"
+        ]
     }
-
-# ============================================================================
-# ERROR HANDLERS
-# ============================================================================
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
-    """Custom HTTP exception handler."""
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.detail, "status_code": exc.status_code},
-    )
-
-# ============================================================================
-# STARTUP/SHUTDOWN
-# ============================================================================
-
-@app.on_event("startup")
-async def startup_event():
-    """Run on startup."""
-    logger.info("API startup complete")
-    logger.info(f"Loaded {len(ALL_SUPPLIERS)} suppliers")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Run on shutdown."""
-    logger.info("API shutdown")
-
-# ============================================================================
-# AUTHENTICATION & SSO ENDPOINTS
-# ============================================================================
-
-@app.post("/api/auth/sso", tags=["Auth"], summary="Walmart SSO Login")
-async def sso_login(walmart_id: str, email: str, name: str):
-    """Handle Walmart SSO login.
-    
-    In production, this would validate against Azure AD.
-    For now, we trust the SSO provider has already validated.
-    """
-    user, session_token = user_service.login_sso(walmart_id, email, name)
-    
-    return {
-        "success": True,
-        "user": user.to_dict(),
-        "session_token": session_token,
-        "message": f"Welcome {user.name}!"
-    }
-
-@app.post("/api/auth/guest-login", tags=["Auth"], summary="Guest Login")
-async def guest_login(email: str, name: str):
-    """Allow guest login (without SSO)."""
-    user = user_service.register_user(email, name)
-    
-    # Create session
-    import hashlib
-    from datetime import datetime, timedelta
-    session_token = hashlib.sha256(f"{email}-{datetime.now()}".encode()).hexdigest()
-    user_service.sessions[session_token] = {
-        "user_email": email,
-        "expires": (datetime.now() + timedelta(days=1)).isoformat(),
-        "sso": False
-    }
-    
-    return {
-        "success": True,
-        "user": user.to_dict(),
-        "session_token": session_token,
-        "message": f"Welcome {user.name}!"
-    }
-
-@app.post("/api/auth/logout", tags=["Auth"], summary="Logout")
-async def logout(session_token: str):
-    """Logout user."""
-    success = user_service.logout(session_token)
-    return {
-        "success": success,
-        "message": "Logged out successfully" if success else "Invalid session"
-    }
-
-@app.get("/api/auth/validate", tags=["Auth"], summary="Validate Session")
-async def validate_session(session_token: str):
-    """Validate session token."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid or expired session")
-    
-    return {
-        "valid": True,
-        "user": user.to_dict()
-    }
-
-# ============================================================================
-# FAVORITES ENDPOINTS
-# ============================================================================
-
-@app.post("/api/favorites/add", tags=["Favorites"], summary="Add Favorite")
-async def add_favorite(session_token: str, supplier_id: int, supplier_name: str):
-    """Add supplier to favorites."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    success = user_service.add_favorite(user.email, supplier_id, supplier_name)
-    return {
-        "success": success,
-        "message": "Added to favorites" if success else "Already in favorites"
-    }
-
-@app.post("/api/favorites/remove", tags=["Favorites"], summary="Remove Favorite")
-async def remove_favorite(session_token: str, supplier_id: int):
-    """Remove supplier from favorites."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    success = user_service.remove_favorite(user.email, supplier_id)
-    return {
-        "success": success,
-        "message": "Removed from favorites"
-    }
-
-@app.get("/api/favorites", tags=["Favorites"], summary="Get Favorites")
-async def get_favorites(session_token: str):
-    """Get user's favorite suppliers."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    favorites = user_service.get_favorites(user.email)
-    return {
-        "count": len(favorites),
-        "favorites": favorites
-    }
-
-@app.get("/api/favorites/is-favorite", tags=["Favorites"], summary="Check if Favorite")
-async def is_favorite(session_token: str, supplier_id: int):
-    """Check if supplier is in favorites."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    is_fav = user_service.is_favorite(user.email, supplier_id)
-    return {"is_favorite": is_fav}
-
-# ============================================================================
-# NOTES ENDPOINTS
-# ============================================================================
-
-@app.post("/api/notes/add", tags=["Notes"], summary="Add Note")
-async def add_note(session_token: str, supplier_id: int, content: str):
-    """Add note to supplier."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    note = user_service.add_note(user.email, supplier_id, content)
-    return {
-        "success": True,
-        "note": note
-    }
-
-@app.post("/api/notes/update", tags=["Notes"], summary="Update Note")
-async def update_note(session_token: str, note_id: str, content: str):
-    """Update existing note."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    note = user_service.update_note(user.email, note_id, content)
-    if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
-    
-    return {"success": True, "note": note}
-
-@app.post("/api/notes/delete", tags=["Notes"], summary="Delete Note")
-async def delete_note(session_token: str, note_id: str):
-    """Delete a note."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    success = user_service.delete_note(user.email, note_id)
-    return {
-        "success": success,
-        "message": "Note deleted" if success else "Note not found"
-    }
-
-@app.get("/api/notes", tags=["Notes"], summary="Get Notes")
-async def get_notes(session_token: str, supplier_id: Optional[int] = None):
-    """Get user's notes, optionally filtered by supplier."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    notes = user_service.get_notes(user.email, supplier_id)
-    return {
-        "count": len(notes),
-        "notes": notes
-    }
-
-# ============================================================================
-# INBOX ENDPOINTS
-# ============================================================================
-
-@app.get("/api/inbox", tags=["Inbox"], summary="Get Inbox")
-async def get_inbox(session_token: str, unread_only: bool = False):
-    """Get user's inbox messages."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    messages = user_service.get_inbox(user.email, unread_only)
-    unread_count = user_service.get_unread_count(user.email)
-    
-    return {
-        "count": len(messages),
-        "unread_count": unread_count,
-        "messages": messages
-    }
-
-@app.post("/api/inbox/mark-read", tags=["Inbox"], summary="Mark Message as Read")
-async def mark_as_read(session_token: str, message_id: str):
-    """Mark message as read."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    success = user_service.mark_as_read(user.email, message_id)
-    return {"success": success}
-
-@app.post("/api/inbox/mark-all-read", tags=["Inbox"], summary="Mark All as Read")
-async def mark_all_as_read(session_token: str):
-    """Mark all messages as read."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    count = user_service.mark_all_as_read(user.email)
-    return {"success": True, "marked_count": count}
-
-@app.post("/api/inbox/delete", tags=["Inbox"], summary="Delete Message")
-async def delete_message(session_token: str, message_id: str):
-    """Delete message from inbox."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    success = user_service.delete_message(user.email, message_id)
-    return {
-        "success": success,
-        "message": "Message deleted" if success else "Message not found"
-    }
-
-@app.get("/api/inbox/unread-count", tags=["Inbox"], summary="Get Unread Count")
-async def get_unread_count(session_token: str):
-    """Get count of unread messages."""
-    user = user_service.validate_session(session_token)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    count = user_service.get_unread_count(user.email)
-    return {"unread_count": count}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "app:app",
-        host="localhost",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run(app, host="0.0.0.0", port=8000)

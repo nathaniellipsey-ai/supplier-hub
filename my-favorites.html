@@ -190,17 +190,17 @@
     
     <script>
         // Simple API client for favorites
-        const API_BASE = '/api';
+        const API_URL = '/';
         
         async function getFavorites() {
-            const response = await fetch(`${API_BASE}/favorites`);
+            const response = await fetch(`${API_URL}api/favorites`);
             if (!response.ok) throw new Error('Failed to fetch favorites');
             return response.json();
         }
         
         async function removeFavorite(supplierId) {
             const params = new URLSearchParams({ supplier_id: supplierId });
-            const response = await fetch(`${API_BASE}/favorites/remove?${params}`, { method: 'POST' });
+            const response = await fetch(`${API_URL}api/favorites/remove?${params}`, { method: 'POST' });
             if (!response.ok) throw new Error('Failed to remove favorite');
             return response.json();
         }
