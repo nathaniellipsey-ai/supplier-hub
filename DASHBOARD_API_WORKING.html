@@ -38,6 +38,33 @@
             font-size: 28px;
         }
 
+        nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        nav a {
+            padding: 10px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        nav a.active {
+            background: white;
+            color: #0071ce;
+            border-color: white;
+        }
+
         .logout-btn {
             background: white;
             color: #0071ce;
@@ -222,7 +249,14 @@
                 <h1>🏪 Supplier Hub</h1>
                 <p>Enterprise Supplier Search & Management</p>
             </div>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <nav>
+                    <a href="/DASHBOARD_API_WORKING.html" class="active">Dashboard</a>
+                    <a href="/CHATBOT.html">🤖 Chatbot</a>
+                    <a href="/IMPORT_SUPPLIERS.html">📥 Import</a>
+                </nav>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
         </header>
 
         <div id="stats" class="stats-grid"></div>

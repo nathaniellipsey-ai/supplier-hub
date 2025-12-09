@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Suppliers - Supplier Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0071ce 0%, #00a651 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            color: #0071ce;
+            font-size: 24px;
+        }
+
+        nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        nav a {
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            color: #333;
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            background: #f5f5f5;
+        }
+
+        nav a.active {
+            background: #0071ce;
+            color: white;
+            border-color: #0071ce;
+        }
+
+        .logout-btn {
+            background: white;
+            color: #0071ce;
+            border: 1px solid #0071ce;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #0071ce;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .card h3 {
+            color: #333;
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .upload-area {
+            border: 2px dashed #0071ce;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .upload-area:hover {
+            background: #f0f8ff;
+            border-color: #004c91;
+        }
+
+        .upload-area.dragover {
+            background: #e3f2fd;
+            border-color: #004c91;
+            transform: scale(1.02);
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-area p {
+            margin: 0;
+        }
+
+        .upload-area .big {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0071ce;
+        }
+
+        .upload-area .small {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+        }
+
+        .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .or-divider {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .or-divider::before,
+        .or-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .or-divider::before {
+            left: 0;
+        }
+
+        .or-divider::after {
+            right: 0;
+        }
+
+        button {
+            background: #0071ce;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #004c91;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .file-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .file-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .file-input button {
+            flex: 0 0 auto;
+            width: auto;
+            padding: 10px 15px;
+        }
+
+        .progress {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #0071ce;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .result.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+
+        .result.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+
+        .result.info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border-left: 4px solid #2196f3;
+        }
+
+        .result h4 {
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .format-section {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .format-section code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .format-section pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-size: 11px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0071ce;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📥 Import Suppliers</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <nav>
+                    <a href="/DASHBOARD_API_WORKING.html">Dashboard</a>
+                    <a href="/CHATBOT.html">Chatbot</a>
+                    <a href="/IMPORT_SUPPLIERS.html" class="active">Import</a>
+                </nav>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="card">
+                <h2>📂 Upload CSV File</h2>
+                <p>Drag and drop your CSV file or click to select. The system will parse and import all suppliers.</p>
+
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <div class="icon">📄</div>
+                    <p class="big">Drop your CSV file here</p>
+                    <p class="small">or click to browse</p>
+                    <input type="file" id="fileInput" accept=".csv" onchange="handleFileSelect(event)">
+                </div>
+
+                <div class="or-divider">OR</div>
+
+                <button onclick="importSampleData()">📊 Import Sample Data</button>
+
+                <div class="progress" id="progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Uploading...</div>
+                </div>
+
+                <div class="result" id="result"></div>
+            </div>
+
+            <!-- CSV Format Reference -->
+            <div class="card">
+                <h2>📋 CSV Format</h2>
+                <p>Your CSV file must contain these columns:</p>
+
+                <div class="format-section">
+                    <p><strong>Required Columns:</strong></p>
+                    <ul style="margin-left: 15px;">
+                        <li><code>id</code> - Unique supplier ID (number)</li>
+                        <li><code>name</code> - Supplier name</li>
+                        <li><code>category</code> - Product category</li>
+                        <li><code>location</code> - City, State (e.g., "New York, NY")</li>
+                        <li><code>region</code> - State code (e.g., "NY")</li>
+                        <li><code>rating</code> - Rating 0-5 (decimal)</li>
+                        <li><code>aiScore</code> - AI Score 0-100 (number)</li>
+                        <li><code>products</code> - Products separated by ; (e.g., "Product A;Product B")</li>
+                        <li><code>certifications</code> - Certifications separated by ; (e.g., "ISO 9001;EPA")</li>
+                        <li><code>walmartVerified</code> - true or false</li>
+                        <li><code>yearsInBusiness</code> - Years in business (number)</li>
+                        <li><code>projectsCompleted</code> - Number of projects (number)</li>
+                    </ul>
+                </div>
+
+                <h3>Example CSV</h3>
+                <div class="format-section">
+                    <pre>id,name,category,location,region,rating,aiScore,products,certifications,walmartVerified,yearsInBusiness,projectsCompleted
+1,ABC Steel Corp,Steel & Metal,New York\, NY,NY,4.5,85,Steel Beams;Rebar;Steel Pipe,ISO 9001;EPA,true,15,2500
+2,XYZ Lumber Inc,Lumber & Wood,Los Angeles\, CA,CA,4.2,78,Plywood;2x4 Lumber;MDF,ISO 9001,false,8,1200</pre>
+                </div>
+
+                <h3>📝 Tips</h3>
+                <div class="format-section">
+                    <p>✅ Use semicolons (;) to separate multiple products/certifications</p>
+                    <p>✅ Include commas in location but escape them in CSV (use quotes)</p>
+                    <p>✅ Rating should be between 0 and 5</p>
+                    <p>✅ AI Score should be between 0 and 100</p>
+                    <p>✅ Boolean values: true or false (lowercase)</p>
+                    <p>📥 Maximum file size: 10MB</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="card" style="margin-top: 20px;">
+            <h2>📊 Current Statistics</h2>
+            <div id="stats" class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="totalSuppliers">0</div>
+                    <div class="stat-label">Total Suppliers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="verifiedSuppliers">0</div>
+                    <div class="stat-label">Verified Suppliers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="avgRating">0</div>
+                    <div class="stat-label">Average Rating</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="avgScore">0</div>
+                    <div class="stat-label">Average AI Score</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        const uploadArea = document.getElementById('uploadArea');
+
+        function checkAuth() {
+            const sessionId = localStorage.getItem('session_id');
+            if (!sessionId) {
+                window.location.href = '/login.html';
+                return false;
+            }
+            return true;
+        }
+
+        function logout() {
+            const sessionId = localStorage.getItem('session_id');
+            if (sessionId) {
+                fetch(`${API_BASE}/auth/logout?session_token=${sessionId}`, { method: 'POST' });
+            }
+            localStorage.clear();
+            window.location.href = '/login.html';
+        }
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        }
+
+        async function uploadFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                showResult('error', 'Please upload a CSV file', 'Invalid file type');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('user_id', localStorage.getItem('user_id') || 'default');
+
+            showProgress(true);
+            document.getElementById('progressText').textContent = 'Uploading and importing...';
+
+            try {
+                const response = await fetch(`${API_BASE}/suppliers/import`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('success', 
+                        `✅ Success! Imported ${data.imported} suppliers.`,
+                        `Total suppliers in system: ${data.total_suppliers_now}`
+                    );
+                    document.getElementById('fileInput').value = '';
+                    await loadStats();
+                } else {
+                    showResult('error',
+                        'Import failed',
+                        data.message || 'Unknown error occurred'
+                    );
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showResult('error',
+                    'Connection error',
+                    'Failed to connect to server. Make sure backend is running.'
+                );
+            } finally {
+                showProgress(false);
+            }
+        }
+
+        async function importSampleData() {
+            // Create sample CSV
+            const sampleData = `id,name,category,location,region,rating,aiScore,products,certifications,walmartVerified,yearsInBusiness,projectsCompleted
+501,Quality Steel Supply,Steel & Metal,Boston\, MA,MA,4.6,88,Steel Beams;Rebar;Steel Pipe,ISO 9001;EPA Certified,true,18,3200
+502,Modern Lumber Inc,Lumber & Wood,Denver\, CO,CO,4.3,82,Plywood;2x4 Lumber;Particle Board,ISO 9001,false,12,1800
+503,Advanced Electrical,Electrical Supplies,Seattle\, WA,WA,4.7,90,Electrical Wire;Outlets;Light Fixtures,ISO 9001;UL Certified,true,20,4100
+504,ProPipe Solutions,Plumbing Supplies,Atlanta\, GA,GA,4.4,84,PVC Pipe;Copper Pipe;Faucets;Valves,ISO 9001,false,10,1600
+505,ThermalCare HVAC,HVAC Equipment,Miami\, FL,FL,4.5,86,Air Conditioning Units;Heat Pumps;Ductwork,ISO 9001;EPA Certified,true,16,2900`;
+
+            const blob = new Blob([sampleData], { type: 'text/csv' });
+            const file = new File([blob], 'sample_suppliers.csv', { type: 'text/csv' });
+            uploadFile(file);
+        }
+
+        function showProgress(show) {
+            document.getElementById('progress').style.display = show ? 'block' : 'none';
+            if (show) {
+                const fill = document.getElementById('progressFill');
+                let width = 0;
+                const interval = setInterval(() => {
+                    width += Math.random() * 30;
+                    if (width > 90) width = 90;
+                    fill.style.width = width + '%';
+                }, 200);
+                // Complete on next task
+                setTimeout(() => {
+                    clearInterval(interval);
+                    fill.style.width = '100%';
+                }, 2000);
+            }
+        }
+
+        function showResult(type, title, message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `<h4>${title}</h4><p>${message}</p>`;
+            resultDiv.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    resultDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/stats`);
+                const stats = await response.json();
+
+                document.getElementById('totalSuppliers').textContent = stats.total_suppliers || 0;
+                document.getElementById('verifiedSuppliers').textContent = stats.walmart_verified || 0;
+                document.getElementById('avgRating').textContent = (stats.average_rating || 0).toFixed(1) + '★';
+                document.getElementById('avgScore').textContent = (stats.average_ai_score || 0).toFixed(0);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            if (!checkAuth()) return;
+            loadStats();
+        });
+    </script>
+</body>
+</html>
