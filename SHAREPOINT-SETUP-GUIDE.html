@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SharePoint Setup Guide - Supplier Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        
+        h1 {
+            color: #0071ce;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            border-bottom: 4px solid #ffc220;
+            padding-bottom: 15px;
+        }
+        
+        h2 {
+            color: #004c91;
+            font-size: 1.8rem;
+            margin-top: 40px;
+            margin-bottom: 15px;
+        }
+        
+        h3 {
+            color: #0071ce;
+            font-size: 1.3rem;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+        
+        .intro {
+            background: #e7f3ff;
+            border-left: 5px solid #0071ce;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+        
+        .step-number {
+            background: #0071ce;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e02020;
+            font-size: 0.9rem;
+        }
+        
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .success {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background: #0071ce;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .btn {
+            background: #0071ce;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 5px;
+        }
+        
+        .btn:hover {
+            background: #004c91;
+        }
+        
+        .screenshot {
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            margin: 15px 0;
+            padding: 10px;
+            background: #fafafa;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ SharePoint Backend Setup Guide</h1>
+        
+        <div class="intro">
+            <strong>🎯 Purpose:</strong> This guide will help you set up SharePoint Lists to enable cloud-based storage for the Supplier Portal dashboard. This allows users to share favorites, notes, and inbox data across devices and with other team members!
+        </div>
+
+        <div class="success">
+            <strong>✅ Benefits of SharePoint Integration:</strong>
+            <ul>
+                <li>🌐 <strong>Shared Data</strong> - All users see the same vendor information</li>
+                <li>☁️ <strong>Cloud Storage</strong> - Favorites, notes, and inbox synced to SharePoint</li>
+                <li>🔒 <strong>Secure</strong> - Uses Walmart's Microsoft SSO authentication</li>
+                <li>📱 <strong>Cross-Device</strong> - Access your data from any device</li>
+                <li>🔄 <strong>Real-Time Sync</strong> - Changes reflect immediately for all users</li>
+                <li>💾 <strong>Automatic Fallback</strong> - Uses localStorage if SharePoint is unavailable</li>
+            </ul>
+        </div>
+
+        <h2>📋 Prerequisites</h2>
+        <ul>
+            <li>Access to <code>https://walmart.sharepoint.com/sites/SupplierPortal</code></li>
+            <li>Permissions to create lists in the SharePoint site</li>
+            <li>Site Owner or Site Member role (to create lists)</li>
+        </ul>
+
+        <div class="warning">
+            ⚠️ <strong>Note:</strong> If the SharePoint site <code>SupplierPortal</code> doesn't exist yet, you'll need to create it first. Contact your SharePoint admin or create it yourself if you have permissions.
+        </div>
+
+        <h2>🏗️ Setup Steps</h2>
+
+        <div class="step">
+            <h3><span class="step-number">1</span> Navigate to SharePoint Site</h3>
+            <p>Go to: <code>https://walmart.sharepoint.com/sites/SupplierPortal</code></p>
+            <p>If the site doesn't exist, create it:</p>
+            <ol>
+                <li>Go to SharePoint home</li>
+                <li>Click "+ Create site"</li>
+                <li>Choose "Team site"</li>
+                <li>Name: <strong>Supplier Portal</strong></li>
+                <li>URL: <strong>SupplierPortal</strong></li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span> Create List 1: UserProfiles</h3>
+            <p>This list stores user profile information.</p>
+            <ol>
+                <li>On the SharePoint site, click <strong>"+ New"</strong> → <strong>"List"</strong></li>
+                <li>Choose <strong>"Blank list"</strong></li>
+                <li>Name: <code>UserProfiles</code></li>
+                <li>Click <strong>"Create"</strong></li>
+                <li>Add the following columns:</li>
+            </ol>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column Name</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Title</td>
+                        <td>Single line of text</td>
+                        <td>Store user email (default column)</td>
+                    </tr>
+                    <tr>
+                        <td>FullName</td>
+                        <td>Single line of text</td>
+                        <td>User's full name</td>
+                    </tr>
+                    <tr>
+                        <td>Department</td>
+                        <td>Single line of text</td>
+                        <td>User's department</td>
+                    </tr>
+                    <tr>
+                        <td>LastLogin</td>
+                        <td>Date and Time</td>
+                        <td>Last login timestamp</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <p><strong>To add a column:</strong></p>
+            <ol>
+                <li>Click <strong>"+ Add column"</strong></li>
+                <li>Select the column type</li>
+                <li>Enter the column name</li>
+                <li>Click <strong>"Save"</strong></li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span> Create List 2: SupplierFavorites</h3>
+            <p>This list stores user favorite suppliers.</p>
+            <ol>
+                <li>Click <strong>"+ New"</strong> → <strong>"List"</strong></li>
+                <li>Choose <strong>"Blank list"</strong></li>
+                <li>Name: <code>SupplierFavorites</code></li>
+                <li>Click <strong>"Create"</strong></li>
+                <li>Add the following columns:</li>
+            </ol>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column Name</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Title</td>
+                        <td>Single line of text</td>
+                        <td>Store user email (default column)</td>
+                    </tr>
+                    <tr>
+                        <td>SupplierId</td>
+                        <td>Number</td>
+                        <td>Supplier ID number</td>
+                    </tr>
+                    <tr>
+                        <td>DateAdded</td>
+                        <td>Date and Time</td>
+                        <td>When favorite was added</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span> Create List 3: SupplierNotes</h3>
+            <p>This list stores user notes about suppliers.</p>
+            <ol>
+                <li>Click <strong>"+ New"</strong> → <strong>"List"</strong></li>
+                <li>Choose <strong>"Blank list"</strong></li>
+                <li>Name: <code>SupplierNotes</code></li>
+                <li>Click <strong>"Create"</strong></li>
+                <li>Add the following columns:</li>
+            </ol>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column Name</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Title</td>
+                        <td>Single line of text</td>
+                        <td>Store user email (default column)</td>
+                    </tr>
+                    <tr>
+                        <td>SupplierId</td>
+                        <td>Number</td>
+                        <td>Supplier ID number</td>
+                    </tr>
+                    <tr>
+                        <td>NoteText</td>
+                        <td>Multiple lines of text</td>
+                        <td>The actual note content (set to "Plain text")</td>
+                    </tr>
+                    <tr>
+                        <td>DateCreated</td>
+                        <td>Date and Time</td>
+                        <td>When note was created</td>
+                    </tr>
+                    <tr>
+                        <td>DateModified</td>
+                        <td>Date and Time</td>
+                        <td>Last modification date</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">5</span> Create List 4: SupplierInbox</h3>
+            <p>This list stores user inbox messages.</p>
+            <ol>
+                <li>Click <strong>"+ New"</strong> → <strong>"List"</strong></li>
+                <li>Choose <strong>"Blank list"</strong></li>
+                <li>Name: <code>SupplierInbox</code></li>
+                <li>Click <strong>"Create"</strong></li>
+                <li>Add the following columns:</li>
+            </ol>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column Name</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Title</td>
+                        <td>Single line of text</td>
+                        <td>Store user email (default column)</td>
+                    </tr>
+                    <tr>
+                        <td>MessageId</td>
+                        <td>Number</td>
+                        <td>Unique message ID</td>
+                    </tr>
+                    <tr>
+                        <td>Vendor</td>
+                        <td>Single line of text</td>
+                        <td>Vendor name</td>
+                    </tr>
+                    <tr>
+                        <td>Subject</td>
+                        <td>Single line of text</td>
+                        <td>Message subject</td>
+                    </tr>
+                    <tr>
+                        <td>Message</td>
+                        <td>Multiple lines of text</td>
+                        <td>Message content (set to "Plain text")</td>
+                    </tr>
+                    <tr>
+                        <td>DateReceived</td>
+                        <td>Date and Time</td>
+                        <td>When message was received</td>
+                    </tr>
+                    <tr>
+                        <td>IsRead</td>
+                        <td>Yes/No</td>
+                        <td>Whether message has been read</td>
+                    </tr>
+                    <tr>
+                        <td>IsStarred</td>
+                        <td>Yes/No</td>
+                        <td>Whether message is starred</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">6</span> Verify Setup</h3>
+            <p>After creating all lists, verify your SharePoint site has:</p>
+            <ul>
+                <li>✅ <code>UserProfiles</code> list with 4 columns</li>
+                <li>✅ <code>SupplierFavorites</code> list with 3 columns</li>
+                <li>✅ <code>SupplierNotes</code> list with 5 columns</li>
+                <li>✅ <code>SupplierInbox</code> list with 8 columns</li>
+            </ul>
+        </div>
+
+        <div class="success">
+            <h3>🎉 Setup Complete!</h3>
+            <p>Your SharePoint backend is now ready! The dashboard will automatically detect and use SharePoint when available.</p>
+            <p><strong>What happens next:</strong></p>
+            <ul>
+                <li>When users open the dashboard, it will connect to SharePoint automatically</li>
+                <li>The status indicator will show <strong>"☁️ Cloud Mode"</strong> if connected</li>
+                <li>If SharePoint is unavailable, it will show <strong>"💾 Local Mode"</strong> and use localStorage</li>
+                <li>All favorites, notes, and inbox items will be synced to SharePoint</li>
+            </ul>
+        </div>
+
+        <h2>🔧 Configuration (Optional)</h2>
+        
+        <div class="step">
+            <h3>Change SharePoint Site URL</h3>
+            <p>If you want to use a different SharePoint site, edit the <code>supplier-search-engine.html</code> file:</p>
+            
+            <div class="code-block">
+const SHAREPOINT_CONFIG = {
+    siteUrl: '<strong>https://walmart.sharepoint.com/sites/YourSiteName</strong>',
+    lists: {
+        userProfiles: 'UserProfiles',
+        favorites: 'SupplierFavorites',
+        notes: 'SupplierNotes',
+        inbox: 'SupplierInbox'
+    },
+    enabled: true,
+    useLocalStorageFallback: true
+};
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>Disable SharePoint (Use localStorage Only)</h3>
+            <p>To temporarily disable SharePoint and use only localStorage:</p>
+            
+            <div class="code-block">
+const SHAREPOINT_CONFIG = {
+    siteUrl: 'https://walmart.sharepoint.com/sites/SupplierPortal',
+    lists: { ... },
+    <strong>enabled: false</strong>,  // Set to false
+    useLocalStorageFallback: true
+};
+            </div>
+        </div>
+
+        <h2>🐛 Troubleshooting</h2>
+
+        <h3>❌ Dashboard shows "💾 Local Mode" instead of "☁️ Cloud Mode"</h3>
+        <ul>
+            <li>Check that the SharePoint site URL is correct</li>
+            <li>Verify all 4 lists exist and are named correctly</li>
+            <li>Check browser console for errors (F12)</li>
+            <li>Ensure you're logged into Walmart's network/VPN</li>
+            <li>Check that <code>SHAREPOINT_CONFIG.enabled</code> is <code>true</code></li>
+        </ul>
+
+        <h3>❌ CORS or authentication errors</h3>
+        <ul>
+            <li>Ensure you're accessing the dashboard from a Walmart domain or localhost</li>
+            <li>Check that you're signed into Microsoft 365 with your Walmart account</li>
+            <li>Try opening the SharePoint site directly first, then reload the dashboard</li>
+        </ul>
+
+        <h3>❌ Data not syncing</h3>
+        <ul>
+            <li>Check browser console for API errors</li>
+            <li>Verify column names match exactly (case-sensitive)</li>
+            <li>Ensure you have Edit permissions on the SharePoint lists</li>
+        </ul>
+
+        <h2>📚 Additional Resources</h2>
+        <ul>
+            <li><a href="https://support.microsoft.com/en-us/office/create-a-list-0d397414-d0fe-4428-b271-5c3c873c4b5b" target="_blank">Microsoft: Create a List in SharePoint</a></li>
+            <li><a href="https://support.microsoft.com/en-us/office/add-a-column-to-a-list-or-library-2b0361ae-1bd3-41a3-8153-460b3dd37c82" target="_blank">Microsoft: Add Columns to a List</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/working-with-lists-and-list-items-with-rest" target="_blank">SharePoint REST API Documentation</a></li>
+        </ul>
+
+        <div class="warning">
+            <strong>💡 Pro Tip:</strong> Once setup is complete, bookmark the SharePoint site so you can easily manage the lists and view the data directly in SharePoint!
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 3px solid #ffc220;">
+            <p style="color: #666; font-size: 0.9rem;">Created with ❤️ by Code Puppy 🐶</p>
+            <p style="color: #999; font-size: 0.8rem;">May 2025 | Walmart Global Tech</p>
+        </div>
+    </div>
+</body>
+</html>
