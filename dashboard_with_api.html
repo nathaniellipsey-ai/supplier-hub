@@ -3352,7 +3352,7 @@ async function searchSuppliersFromAPI(query) {
             
             if (!userEmail) {
                 // Redirect to login
-                window.location.href = 'supplier-auth-system.html';
+                window.location.href = 'login.html';
                 return false;
             }
 
@@ -3363,7 +3363,7 @@ async function searchSuppliersFromAPI(query) {
 
             if (!userData) {
                 localStorage.removeItem('currentUser');
-                window.location.href = 'supplier-auth-system.html';
+                window.location.href = 'login.html';
                 return false;
             }
 
@@ -3422,7 +3422,7 @@ async function searchSuppliersFromAPI(query) {
 
         function logout() {
             localStorage.removeItem('currentUser');
-            window.location.href = 'supplier-auth-system.html';
+            window.location.href = 'login.html';
         }
 
         async function toggleFavorite(supplierId) {

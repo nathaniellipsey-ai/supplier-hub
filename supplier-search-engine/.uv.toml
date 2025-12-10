@@ -1,2 +1,0 @@
-[tool.uv.pip]
-index-url = "https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple"

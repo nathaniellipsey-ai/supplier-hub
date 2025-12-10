@@ -1,3 +1,0 @@
-#!/bin/bash
-cd /opt/render/project/src
-python -m uvicorn app_minimal:app --host 0.0.0.0 --port $PORT

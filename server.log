@@ -1,6 +1,0 @@
-2025-12-09 00:19:27,038 - app - INFO - [PRODUCTION] Backend initialized with ZERO suppliers (no local data generation)
-2025-12-09 00:19:27,039 - app - INFO - [STATUS] Total suppliers in memory: 0
-INFO:     Started server process [34396]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
