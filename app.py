@@ -52,9 +52,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
-if os.path.exists(os.path.dirname(__file__)):
-    app.mount("/static", StaticFiles(directory=os.path.dirname(__file__)), name="static")
+# Mount static files with proper path handling
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+if os.path.exists(APP_DIR):
+    app.mount("/static", StaticFiles(directory=APP_DIR), name="static")
+    print(f"[INIT] Serving static files from: {APP_DIR}")
 
 # ============================================================================
 # DATABASE STORAGE - ZERO LOCAL DATA
@@ -717,11 +719,15 @@ async def get_dashboard_stats():
 async def root():
     """Serve the main dashboard HTML."""
     try:
-        index_path = os.path.join(os.path.dirname(__file__), "index.html")
+        index_path = os.path.normpath(os.path.join(APP_DIR, "index.html"))
+        logger.info(f"[ROOT] Attempting to serve from: {index_path}")
         if os.path.exists(index_path):
+            logger.info(f"[ROOT] Successfully serving index.html")
             return FileResponse(index_path, media_type="text/html")
-    except:
-        pass
+        else:
+            logger.warning(f"[ROOT] index.html not found at {index_path}")
+    except Exception as e:
+        logger.error(f"[ROOT] Error serving index.html: {str(e)}")
     
     return {
         "api": "Supplier Search Engine",
@@ -729,15 +735,23 @@ async def root():
         "status": "running",
         "mode": "PRODUCTION - ZERO LOCAL DATA",
         "documentation": "/docs",
-        "suppliers_loaded": len(ALL_SUPPLIERS)
+        "suppliers_loaded": len(ALL_SUPPLIERS),
+        "app_dir": APP_DIR
     }
 
 @app.get("/{file_path:path}")
 async def serve_static(file_path: str):
     """Serve static files (HTML, CSS, JS, SVG, etc.)."""
     try:
-        full_path = os.path.join(os.path.dirname(__file__), file_path)
+        # Use absolute path to handle special characters and spaces correctly
+        full_path = os.path.normpath(os.path.join(APP_DIR, file_path))
+        
+        # Security check: ensure path is within APP_DIR
+        if not full_path.startswith(APP_DIR):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
         if os.path.exists(full_path) and os.path.isfile(full_path):
+            # Determine media type based on file extension
             if file_path.endswith('.html'):
                 return FileResponse(full_path, media_type="text/html")
             elif file_path.endswith('.css'):
@@ -750,10 +764,14 @@ async def serve_static(file_path: str):
                 return FileResponse(full_path, media_type="application/json")
             else:
                 return FileResponse(full_path)
-    except:
-        pass
-    
-    raise HTTPException(status_code=404, detail="File not found")
+        else:
+            logger.warning(f"File not found: {full_path} (requested: {file_path})")
+            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error serving static file {file_path}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ============================================================================
 # HEALTH CHECK
