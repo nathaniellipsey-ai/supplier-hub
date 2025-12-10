@@ -1,0 +1,288 @@
+====================================================================
+FIX RENDER DEPLOYMENT - STEP BY STEP
+====================================================================
+Date: December 10, 2025
+Problem: Start Command set to app_standalone:app (wrong)
+Solution: Change to app:app (correct)
+Time: 2 minutes
+Status: READY TO FIX
+
+====================================================================
+THE PROBLEM
+====================================================================
+
+Error in Render logs:
+  Could not import module "app_standalone"
+
+Why:
+  Render's dashboard settings are using wrong Start Command
+  Start Command = python -m uvicorn app_standalone:app (WRONG)
+  File app_standalone.py doesn't exist
+
+What we need:
+  Start Command = python -m uvicorn app:app (CORRECT)
+  File app.py exists and works
+
+====================================================================
+QUICK FIX (2 STEPS)
+====================================================================
+
+STEP 1: OPEN RENDER DASHBOARD AND CHANGE SETTING
+----------------------------------------------
+
+1. Open: https://dashboard.render.com
+2. Sign in
+3. Click: "supplier-hub" service (in services list)
+4. Click: "Settings" tab
+5. Find: "Start Command" field (scroll down if needed)
+6. Clear current value
+7. Paste new value:
+   python -m uvicorn app:app --host 0.0.0.0 --port $PORT
+8. Click: "Save" button
+
+What you should see:
+  ✓ Settings page loaded
+  ✓ "supplier-hub" service name at top
+  ✓ Settings tab selected
+  ✓ "Start Command" field visible
+  ✓ Old value cleared
+  ✓ New value pasted
+  ✓ "Save" button clicked
+  ✓ Page updates confirming save
+
+
+STEP 2: TRIGGER REDEPLOY
+-----------------------
+
+1. Click: "Deploys" tab
+2. Find: "Trigger deploy" button
+3. Click: "Trigger deploy"
+4. A menu might appear
+5. Make sure "Clear build cache" is checked
+6. Click: "Deploy latest commit"
+7. Watch the logs
+
+What you should see:
+  ✓ Deploys tab selected
+  ✓ Deployment history visible
+  ✓ "Trigger deploy" button found
+  ✓ Dropdown menu with options
+  ✓ "Clear build cache" option checked
+  ✓ "Deploy" button clicked
+  ✓ Build starts
+  ✓ Logs update in real-time
+
+
+STEP 3: WAIT FOR BUILD (2-3 MINUTES)
+------------------------------------
+
+Watch for these messages:
+  ==> Cloning from GitHub...
+  ==> Installing Python 3.13.4...
+  ==> Running 'pip install -r requirements.txt'...
+  ==> Deploying...
+  ==> Running 'python -m uvicorn app:app --host 0.0.0.0 --port $PORT'
+  INFO:     Application startup complete
+
+Success looks like:
+  ✓ No error messages
+  ✓ Build completes
+  ✓ "Application startup complete" message
+  ✓ Service status shows "Live"
+
+Your dashboard is now LIVE at:
+  https://supplier-hub.onrender.com
+
+====================================================================
+DETAILED WALKTHROUGH
+====================================================================
+
+OPEN RENDER DASHBOARD:
+  1. Open web browser
+  2. Go to: https://dashboard.render.com
+  3. You should see list of services
+  4. If not logged in, sign in first
+
+FIND YOUR SERVICE:
+  1. Look for: "supplier-hub" in services list
+  2. Click on it
+  3. You're now on the service page
+
+GO TO SETTINGS:
+  1. Look for tabs at top: "Overview", "Settings", "Deploys", etc.
+  2. Click: "Settings" tab
+  3. Page refreshes showing settings
+
+FIND START COMMAND:
+  1. Scroll down the Settings page
+  2. Look for section labeled "Start Command"
+  3. There will be a text input field
+  4. Current value shown: app_standalone:app (wrong)
+
+CHANGE START COMMAND:
+  1. Click in the Start Command field
+  2. Select all text (Ctrl+A)
+  3. Delete text
+  4. Type or paste:
+     python -m uvicorn app:app --host 0.0.0.0 --port $PORT
+  5. Important: No typos!
+  6. Click "Save" button
+  7. Wait for "Settings saved" confirmation
+
+REDEPLOY:
+  1. Click "Deploys" tab
+  2. Click "Trigger deploy" button
+  3. Dialog appears asking about cache
+  4. Check: "Clear build cache"
+  5. Click: "Deploy" button
+  6. Build starts, logs appear below
+  7. Wait for completion
+
+VERIFY SUCCESS:
+  1. Watch logs for "Application startup complete"
+  2. Check service status shows "Live"
+  3. Open: https://supplier-hub.onrender.com
+  4. Dashboard should load
+
+====================================================================
+WHAT TO CHANGE EXACTLY
+====================================================================
+
+Field: "Start Command"
+Location: Settings tab, scroll down
+Current Value (wrong):
+  python -m uvicorn app_standalone:app --host 0.0.0.0 --port $PORT
+
+New Value (correct):
+  python -m uvicorn app:app --host 0.0.0.0 --port $PORT
+
+Difference:
+  Remove: "_standalone" from "app_standalone"
+  Result: "app"
+
+That's it!
+
+====================================================================
+TROUBLESHOOTING
+====================================================================
+
+If you can't find "Start Command" field:
+  → Scroll down more in Settings page
+  → It's usually in middle/bottom section
+  → Look for text input, not dropdown
+  → Should show current value when you click
+
+If settings won't save:
+  → Check for red error messages
+  → Make sure you have admin access
+  → Try refreshing page
+  → Try again
+
+If build still fails after change:
+  → Check Start Command is exactly:
+     python -m uvicorn app:app --host 0.0.0.0 --port $PORT
+  → Verify no typos
+  → Check requirements.txt has all dependencies
+  → Try "Clear build cache" again
+  → Check logs for specific error
+
+If you see different error:
+  → Note the error message
+  → Search error in Google
+  → Check requirements.txt
+  → Check app.py exists in repo
+  → Verify all files committed to GitHub
+
+====================================================================
+URL REFERENCES
+====================================================================
+
+Render Dashboard: https://dashboard.render.com
+Your Service: supplier-hub
+Live Dashboard: https://supplier-hub.onrender.com
+API Docs: https://supplier-hub.onrender.com/docs
+
+====================================================================
+VERIFICATION CHECKLIST
+====================================================================
+
+Before you start:
+  [ ] You have Render account
+  [ ] You have supplier-hub service created
+  [ ] You can access https://dashboard.render.com
+
+During fix:
+  [ ] Go to supplier-hub service
+  [ ] Go to Settings tab
+  [ ] Find Start Command field
+  [ ] Change value to: python -m uvicorn app:app --host 0.0.0.0 --port $PORT
+  [ ] Click Save
+  [ ] Go to Deploys tab
+  [ ] Click Trigger deploy
+  [ ] Check "Clear build cache"
+  [ ] Click Deploy
+
+After deployment:
+  [ ] Watch logs for "Application startup complete"
+  [ ] Check service status is "Live"
+  [ ] Open https://supplier-hub.onrender.com
+  [ ] Dashboard loads successfully
+  [ ] No error messages
+
+====================================================================
+EXPECTED BUILD LOG
+====================================================================
+
+You should see something like:
+
+==> Downloading cache...
+==> Cloning from https://github.com/nathaniellipsey-ai/supplier-hub
+==> Installing Python version 3.13.4...
+==> Running build command 'pip install -r requirements.txt'...
+Collecting fastapi>=0.100.0
+... (many lines of dependencies)
+Successfully installed fastapi uvicorn python-multipart pydantic
+==> Uploading build...
+==> Build successful
+==> Deploying...
+==> Running 'python -m uvicorn app:app --host 0.0.0.0 --port $PORT'
+INFO:     Started server process [XX]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete
+
+Service is now live! ✅
+
+If you don't see this, check the error messages in logs.
+
+====================================================================
+SUMMARY
+====================================================================
+
+What to do:
+  1. Go to Render dashboard
+  2. Click your service
+  3. Go to Settings tab
+  4. Find Start Command field
+  5. Change value
+  6. Save
+  7. Trigger redeploy
+  8. Wait 2-3 minutes
+  9. Dashboard is live!
+
+Time required: ~5 minutes
+
+Result: Your Supplier Hub dashboard LIVE at:
+  https://supplier-hub.onrender.com
+
+====================================================================
+YOU'RE READY! 🚀
+====================================================================
+
+Your dashboard is ready to go live!
+Just need to change one setting in Render.
+Then redeploy.
+Then you're done!
+
+Let's make it live!
+
+====================================================================
