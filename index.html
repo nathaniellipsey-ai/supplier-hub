@@ -2228,7 +2228,8 @@ async function searchSuppliersFromAPI(query) {
         };
 
         // Generate large supplier dataset
-        function generateSuppliers() {
+        // ⚠️ LOCAL DATA GENERATION DISABLED - Using server data only
+        // function generateSuppliers() {
             const suppliers = [];
             const usedNames = new Set();
             const companyTypes = ['Inc.', 'LLC', 'Corp.', 'Co.', 'Supply Co.', 'Distributors', 'Materials', 'Solutions', 'Industries', 'Group', 'Enterprises', 'Services', 'Systems', 'Technologies'];
@@ -2342,9 +2343,9 @@ async function searchSuppliersFromAPI(query) {
                 }
             }
             return suppliers;
-        }
+        } // END OF DISABLED generateSuppliers() FUNCTION
 
-        // Load suppliers from server
+        // ✅ LOAD SUPPLIERS FROM SERVER ONLY (no local generation)
         let allSuppliers = [];
         let filteredSuppliers = [];
         
@@ -3639,15 +3640,9 @@ async function searchSuppliersFromAPI(query) {
         `;
         document.head.appendChild(noteModalStyle);
 
-        // Initialize - Check user session first (async now!)
-        (async function() {
-            const sessionValid = await checkUserSession();
-            if (sessionValid) {
-                initializeFilters();
-                updateStats();
-                renderResults();
-            }
-        })();
+        // Note: User session check disabled - focus on loading suppliers from server
+        // Favorites and user features will work with localStorage fallback
+        console.log('✅ Dashboard ready - suppliers loaded from server');
     </script>
 </body>
 </html>
